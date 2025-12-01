@@ -1,22 +1,34 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useImageEditor } from "@/hooks/use-image-editor";
 import { useToast } from "@/hooks/use-toast";
-import { supabase, saveImage } from "@/lib/supabase";
+import { 
+  saveFile, 
+  getAllUserFolders, 
+  createFolder,
+  getImageDimensions,
+  type FolderRecord 
+} from "@/lib/supabase";
 import { ImageUploader } from "@/components/image-tools/image-uploader";
 import { ImagePreview } from "@/components/image-tools/image-preview";
 import { ToolPanel } from "@/components/image-tools/tool-panel";
 import { OperationHistory } from "@/components/image-tools/operation-history";
 import { SavedImagesGallery } from "@/components/image-tools/saved-images-gallery";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Upload, 
   FolderOpen, 
@@ -25,7 +37,8 @@ import {
   RotateCcw, 
   Trash2,
   ImageIcon,
-  Sparkles
+  Folder,
+  Plus
 } from "lucide-react";
 
 export default function ImageToolsPage() {
@@ -35,7 +48,53 @@ export default function ImageToolsPage() {
   const [activeTab, setActiveTab] = useState<"upload" | "gallery">("upload");
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
+  const [folders, setFolders] = useState<FolderRecord[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [previewRotation, setPreviewRotation] = useState(0);
+  
+  // New folder creation
+  const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  // Load user folders
+  useEffect(() => {
+    if (user?.id) {
+      loadFolders();
+    }
+  }, [user?.id]);
+
+  const loadFolders = async () => {
+    if (!user?.id) return;
+    const userFolders = await getAllUserFolders(user.id);
+    setFolders(userFolders);
+  };
+
+  const handleCreateFolder = async () => {
+    if (!user?.id || !newFolderName.trim()) return;
+    
+    setIsCreatingFolder(true);
+    const folder = await createFolder(user.id, newFolderName.trim());
+    
+    if (folder) {
+      setFolders((prev) => [...prev, folder]);
+      setSelectedFolderId(folder.id);
+      setNewFolderName("");
+      setShowNewFolderInput(false);
+      toast({
+        title: "Folder Created",
+        description: `"${folder.name}" has been created.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create folder.",
+        variant: "destructive",
+      });
+    }
+    setIsCreatingFolder(false);
+  };
 
   const handleFileSelect = useCallback((file: File) => {
     const reader = new FileReader();
@@ -48,7 +107,6 @@ export default function ImageToolsPage() {
   }, [editor]);
 
   const handleGallerySelect = useCallback((imageUrl: string, imageName: string) => {
-    // Fetch image and convert to data URL
     fetch(imageUrl)
       .then((res) => res.blob())
       .then((blob) => {
@@ -61,7 +119,7 @@ export default function ImageToolsPage() {
         };
         reader.readAsDataURL(blob);
       })
-      .catch((err) => {
+      .catch(() => {
         toast({
           title: "Error",
           description: "Failed to load image from gallery",
@@ -81,29 +139,42 @@ export default function ImageToolsPage() {
       
       // Create file from blob
       const extension = editor.state.mimeType.split("/")[1] || "png";
-      const file = new File([blob], `${fileName || "image"}.${extension}`, {
+      const finalFileName = `${fileName || "image"}.${extension}`;
+      const file = new File([blob], finalFileName, {
         type: editor.state.mimeType,
       });
 
-      // Generate unique storage path
-      const storagePath = `${user.id}/${Date.now()}_${file.name}`;
+      // Get image dimensions
+      const dimensions = await getImageDimensions(file);
 
-      // Save to Supabase
-      const result = await saveImage(user.id, file, storagePath);
+      // Save to Supabase with folder
+      const result = await saveFile(
+        user.id, 
+        file, 
+        selectedFolderId,
+        finalFileName,
+        dimensions
+      );
 
       if (result) {
+        const folderName = selectedFolderId 
+          ? folders.find(f => f.id === selectedFolderId)?.name || "folder"
+          : "root";
         toast({
           title: "Image Saved",
-          description: "Your image has been saved to your gallery.",
+          description: `Your image has been saved to "${folderName}".`,
         });
         setSaveDialogOpen(false);
+        setFileName("");
+        setSelectedFolderId(null);
       } else {
         throw new Error("Failed to save image");
       }
     } catch (error) {
+      console.error("Save error:", error);
       toast({
         title: "Error",
-        description: "Failed to save image. Please try again.",
+        description: "Failed to save image. Please check your Supabase configuration.",
         variant: "destructive",
       });
     } finally {
@@ -226,6 +297,7 @@ export default function ImageToolsPage() {
                   imageUrl={editor.state.currentImage}
                   isProcessing={editor.state.isProcessing}
                   onCrop={editor.cropImage}
+                  previewRotation={previewRotation}
                 />
               </motion.div>
             )}
@@ -250,61 +322,28 @@ export default function ImageToolsPage() {
           <ToolPanel
             hasImage={!!editor.state.currentImage}
             isProcessing={editor.state.isProcessing}
-            onRotate={editor.rotateImage}
+            onRotate={(degrees) => {
+              editor.rotateImage(degrees);
+              setPreviewRotation(0);
+            }}
             onResize={editor.resizeImage}
             onExtractLogo={editor.extractLogo}
             onRemoveBackground={editor.removeBackground}
             onRemoveLogo={editor.removeLogo}
+            onPreviewRotation={setPreviewRotation}
+            onCancelPreview={() => setPreviewRotation(0)}
           />
-
-          {/* Quick Actions */}
-          {editor.state.currentImage && (
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-violet-400" />
-                  AI Actions
-                </CardTitle>
-                <CardDescription>
-                  Powered by Google Gemini
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={editor.removeBackground}
-                  disabled={editor.state.isProcessing}
-                >
-                  Remove Background
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={editor.extractLogo}
-                  disabled={editor.state.isProcessing}
-                >
-                  Extract Logo
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start"
-                  onClick={editor.removeLogo}
-                  disabled={editor.state.isProcessing}
-                >
-                  Remove Logo/Watermark
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
       {/* Save Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Save Image</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Save className="w-5 h-5 text-violet-400" />
+              Save Image
+            </DialogTitle>
             <DialogDescription>
               Save your edited image to your gallery for later access.
             </DialogDescription>
@@ -318,6 +357,86 @@ export default function ImageToolsPage() {
                 onChange={(e) => setFileName(e.target.value)}
                 placeholder="Enter file name"
               />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2">
+                <Folder className="w-4 h-4" />
+                Save to Folder
+              </Label>
+              
+              {!showNewFolderInput ? (
+                <div className="space-y-2">
+                  <Select 
+                    value={selectedFolderId || "root"} 
+                    onValueChange={(v) => setSelectedFolderId(v === "root" ? null : v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a folder" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="root">
+                        <div className="flex items-center gap-2">
+                          <FolderOpen className="w-4 h-4" />
+                          <span>Root (No folder)</span>
+                        </div>
+                      </SelectItem>
+                      {folders.map((folder) => (
+                        <SelectItem key={folder.id} value={folder.id}>
+                          <div className="flex items-center gap-2">
+                            <Folder className="w-4 h-4" />
+                            <span>{folder.name}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowNewFolderInput(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create New Folder
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <Input
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      placeholder="Folder name"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleCreateFolder();
+                        if (e.key === "Escape") {
+                          setShowNewFolderInput(false);
+                          setNewFolderName("");
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={handleCreateFolder}
+                      disabled={!newFolderName.trim() || isCreatingFolder}
+                    >
+                      {isCreatingFolder ? "..." : "Create"}
+                    </Button>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setShowNewFolderInput(false);
+                      setNewFolderName("");
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
@@ -341,5 +460,3 @@ export default function ImageToolsPage() {
     </div>
   );
 }
-
-

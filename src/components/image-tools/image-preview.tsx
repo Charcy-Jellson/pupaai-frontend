@@ -14,9 +14,10 @@ interface ImagePreviewProps {
   imageUrl: string;
   isProcessing: boolean;
   onCrop: (x: number, y: number, width: number, height: number) => void;
+  previewRotation?: number;
 }
 
-export function ImagePreview({ imageUrl, isProcessing, onCrop }: ImagePreviewProps) {
+export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation = 0 }: ImagePreviewProps) {
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropping, setIsCropping] = useState(false);
@@ -123,7 +124,8 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop }: ImagePreviewPro
           ) : (
             <motion.img
               initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
+              animate={{ opacity: 1, scale: 1, rotate: previewRotation }}
+              transition={{ rotate: { duration: 0.15 } }}
               src={imageUrl}
               alt="Preview"
               className="max-w-full h-auto rounded-lg shadow-xl"
@@ -155,5 +157,6 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop }: ImagePreviewPro
     </Card>
   );
 }
+
 
 

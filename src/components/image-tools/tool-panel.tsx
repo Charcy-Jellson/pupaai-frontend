@@ -27,6 +27,8 @@ interface ToolPanelProps {
   onExtractLogo: () => void;
   onRemoveBackground: () => void;
   onRemoveLogo: () => void;
+  onPreviewRotation?: (degrees: number) => void;
+  onCancelPreview?: () => void;
 }
 
 export function ToolPanel({
@@ -37,8 +39,11 @@ export function ToolPanel({
   onExtractLogo,
   onRemoveBackground,
   onRemoveLogo,
+  onPreviewRotation,
+  onCancelPreview,
 }: ToolPanelProps) {
-  const [rotationAngle, setRotationAngle] = useState(90);
+  const [rotationAngle, setRotationAngle] = useState(0);
+  const [isPreviewingRotation, setIsPreviewingRotation] = useState(false);
   const [resizeWidth, setResizeWidth] = useState("");
   const [resizeHeight, setResizeHeight] = useState("");
   const [expandedSections, setExpandedSections] = useState({
@@ -134,7 +139,7 @@ export function ToolPanel({
 
             <Separator className="bg-border/50" />
 
-            {/* Custom Rotation */}
+            {/* Custom Rotation with Live Preview */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label className="text-sm text-muted-foreground">Custom Rotation</Label>
@@ -142,21 +147,42 @@ export function ToolPanel({
               </div>
               <Slider
                 value={[rotationAngle]}
-                onValueChange={([value]) => setRotationAngle(value)}
+                onValueChange={([value]) => {
+                  setRotationAngle(value);
+                  setIsPreviewingRotation(true);
+                  onPreviewRotation?.(value);
+                }}
                 min={-180}
                 max={180}
                 step={1}
                 disabled={!hasImage || isProcessing}
               />
-              <Button
-                variant="secondary"
-                size="sm"
-                className="w-full"
-                onClick={() => onRotate(rotationAngle)}
-                disabled={!hasImage || isProcessing}
-              >
-                Apply Rotation
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setRotationAngle(0);
+                    setIsPreviewingRotation(false);
+                    onCancelPreview?.();
+                  }}
+                  disabled={!hasImage || isProcessing || !isPreviewingRotation}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    onRotate(rotationAngle);
+                    setRotationAngle(0);
+                    setIsPreviewingRotation(false);
+                  }}
+                  disabled={!hasImage || isProcessing || rotationAngle === 0}
+                >
+                  Apply
+                </Button>
+              </div>
             </div>
           </CardContent>
         )}
@@ -343,5 +369,6 @@ export function ToolPanel({
     </div>
   );
 }
+
 
 

@@ -1,5 +1,4 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { NextResponse } from "next/server";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -11,26 +10,17 @@ const isPublicRoute = createRouteMatcher([
   "/privacy",
   "/terms",
   "/api/webhooks(.*)",
+  "/api/health(.*)",
 ]);
-
-const isAdminRoute = createRouteMatcher(["/dashboard/admin(.*)"]);
 
 export default clerkMiddleware(async (auth, req) => {
   // Allow public routes
   if (isPublicRoute(req)) {
-    return NextResponse.next();
+    return;
   }
 
-  // Protect all other routes
-  const { userId } = await auth();
-
-  if (!userId) {
-    const signInUrl = new URL("/sign-in", req.url);
-    signInUrl.searchParams.set("redirect_url", req.url);
-    return NextResponse.redirect(signInUrl);
-  }
-
-  return NextResponse.next();
+  // Protect all other routes - this will redirect to sign-in if not authenticated
+  await auth.protect();
 });
 
 export const config = {

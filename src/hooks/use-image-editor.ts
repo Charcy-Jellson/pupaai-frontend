@@ -84,15 +84,28 @@ export function useImageEditor() {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d")!;
 
-        const radians = (degrees * Math.PI) / 180;
-        const sin = Math.abs(Math.sin(radians));
-        const cos = Math.abs(Math.cos(radians));
+        // Normalize degrees to 0-360
+        const normalizedDegrees = ((degrees % 360) + 360) % 360;
+        
+        // For 90 or 270 degrees, swap width and height
+        if (normalizedDegrees === 90 || normalizedDegrees === 270) {
+          canvas.width = img.height;
+          canvas.height = img.width;
+        } else if (normalizedDegrees === 180 || normalizedDegrees === 0) {
+          canvas.width = img.width;
+          canvas.height = img.height;
+        } else {
+          // For arbitrary angles, calculate bounding box
+          const radians = (normalizedDegrees * Math.PI) / 180;
+          const sin = Math.abs(Math.sin(radians));
+          const cos = Math.abs(Math.cos(radians));
+          canvas.width = Math.round(img.width * cos + img.height * sin);
+          canvas.height = Math.round(img.width * sin + img.height * cos);
+        }
 
-        canvas.width = img.width * cos + img.height * sin;
-        canvas.height = img.width * sin + img.height * cos;
-
+        // Move to center and rotate
         ctx.translate(canvas.width / 2, canvas.height / 2);
-        ctx.rotate(radians);
+        ctx.rotate((normalizedDegrees * Math.PI) / 180);
         ctx.drawImage(img, -img.width / 2, -img.height / 2);
 
         const resultUrl = canvas.toDataURL(state.mimeType);
@@ -271,5 +284,6 @@ export function useImageEditor() {
     downloadImage,
   };
 }
+
 
 

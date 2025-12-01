@@ -97,27 +97,6 @@ function RoleBadge({ role }: { role: UserRole }) {
   );
 }
 
-function Badge({ children, variant, className }: { children: React.ReactNode; variant?: string; className?: string }) {
-  return (
-    <span className={cn(
-      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-      className
-    )}>
-      {children}
-    </span>
-  );
-}
-
-function TableComponent({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <div className={cn("relative w-full overflow-auto", className)}>
-      <table className="w-full caption-bottom text-sm">
-        {children}
-      </table>
-    </div>
-  );
-}
-
 export default function UserManagementPage() {
   const { user } = useUser();
   const { toast } = useToast();
@@ -519,5 +498,6 @@ export default function UserManagementPage() {
     </RoleGate>
   );
 }
+
 
 
