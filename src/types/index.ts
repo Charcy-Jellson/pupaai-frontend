@@ -28,7 +28,7 @@ export interface CropData {
 
 export interface ImageOperation {
   id: string;
-  type: "crop" | "resize" | "rotate" | "extract-logo" | "remove-background" | "remove-logo";
+  type: "crop" | "resize" | "rotate" | "compress" | "extract-logo" | "remove-background" | "remove-logo";
   timestamp: Date;
   params?: Record<string, unknown>;
   resultUrl: string;
@@ -54,6 +54,7 @@ export interface NavigationGroup {
   items: NavigationItem[];
   adminOnly?: boolean;
 }
+
 
 
 

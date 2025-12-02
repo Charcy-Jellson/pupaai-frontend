@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useImageEditor } from "@/hooks/use-image-editor";
+import { useUserRole } from "@/hooks/use-user-role";
 import { useToast } from "@/hooks/use-toast";
 import { 
   saveFile, 
@@ -45,6 +46,8 @@ export default function ImageToolsPage() {
   const { user } = useUser();
   const { toast } = useToast();
   const editor = useImageEditor();
+  const { role } = useUserRole();
+  const isAdmin = role === "admin";
   const [activeTab, setActiveTab] = useState<"upload" | "gallery">("upload");
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [fileName, setFileName] = useState("");
@@ -322,14 +325,16 @@ export default function ImageToolsPage() {
           <ToolPanel
             hasImage={!!editor.state.currentImage}
             isProcessing={editor.state.isProcessing}
+            isAdmin={isAdmin}
             onRotate={(degrees) => {
               editor.rotateImage(degrees);
               setPreviewRotation(0);
             }}
             onResize={editor.resizeImage}
-            onExtractLogo={editor.extractLogo}
-            onRemoveBackground={editor.removeBackground}
-            onRemoveLogo={editor.removeLogo}
+            onCompress={editor.compressImage}
+            onExtractLogo={(modelId) => editor.extractLogo(modelId)}
+            onRemoveBackground={(modelId) => editor.removeBackground(modelId)}
+            onRemoveLogo={(modelId) => editor.removeLogo(modelId)}
             onPreviewRotation={setPreviewRotation}
             onCancelPreview={() => setPreviewRotation(0)}
           />

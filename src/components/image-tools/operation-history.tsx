@@ -12,7 +12,8 @@ import {
   Scissors, 
   Eraser, 
   Wand2,
-  History
+  History,
+  FileDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +26,7 @@ const operationIcons: Record<ImageOperation["type"], React.ComponentType<{ class
   crop: Crop,
   resize: Maximize2,
   rotate: RotateCw,
+  compress: FileDown,
   "extract-logo": Scissors,
   "remove-background": Eraser,
   "remove-logo": Wand2,
@@ -34,6 +36,7 @@ const operationLabels: Record<ImageOperation["type"], string> = {
   crop: "Crop",
   resize: "Resize",
   rotate: "Rotate",
+  compress: "Compress",
   "extract-logo": "Extract Logo",
   "remove-background": "Remove BG",
   "remove-logo": "Remove Logo",
@@ -100,6 +103,7 @@ export function OperationHistory({ operations, onUndo }: OperationHistoryProps) 
     </Card>
   );
 }
+
 
 
 

@@ -36,9 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark">
+      <html lang="en" className="dark" suppressHydrationWarning>
         <body
           className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+          suppressHydrationWarning
         >
           <TooltipProvider>
             {children}

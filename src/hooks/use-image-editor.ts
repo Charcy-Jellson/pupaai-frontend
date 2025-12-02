@@ -188,19 +188,133 @@ export function useImageEditor() {
     [state.currentImage, state.mimeType, addOperation]
   );
 
-  const extractLogo = useCallback(async () => {
+  const compressImage = useCallback(
+    async (targetSizeKB: number): Promise<{ originalSize: number; finalSize: number; quality: number }> => {
+      if (!state.currentImage) {
+        return { originalSize: 0, finalSize: 0, quality: 0 };
+      }
+
+      setState((prev) => ({ ...prev, isProcessing: true }));
+
+      try {
+        const img = new Image();
+        img.src = state.currentImage;
+        await new Promise((resolve) => (img.onload = resolve));
+
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d")!;
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        // Get original size
+        const originalBlob = await new Promise<Blob>((resolve) => {
+          canvas.toBlob((blob) => resolve(blob!), "image/jpeg", 1.0);
+        });
+        const originalSizeKB = originalBlob.size / 1024;
+
+        // If already smaller than target, return as is with high quality JPEG
+        if (originalSizeKB <= targetSizeKB) {
+          const resultUrl = canvas.toDataURL("image/jpeg", 0.95);
+          addOperation({
+            type: "compress",
+            params: { targetSizeKB, quality: 0.95 },
+            resultUrl,
+          });
+          return {
+            originalSize: Math.round(originalSizeKB),
+            finalSize: Math.round(originalSizeKB),
+            quality: 95,
+          };
+        }
+
+        // Binary search for optimal quality
+        let minQuality = 0.1;
+        let maxQuality = 1.0;
+        let bestBlob: Blob = originalBlob;
+        let bestQuality = 1.0;
+        const targetBytes = targetSizeKB * 1024;
+
+        // Maximum 10 iterations for binary search
+        for (let i = 0; i < 10; i++) {
+          const midQuality = (minQuality + maxQuality) / 2;
+          
+          const blob = await new Promise<Blob>((resolve) => {
+            canvas.toBlob((b) => resolve(b!), "image/jpeg", midQuality);
+          });
+
+          if (blob.size <= targetBytes) {
+            // Size is acceptable, try higher quality
+            bestBlob = blob;
+            bestQuality = midQuality;
+            minQuality = midQuality;
+          } else {
+            // Size too large, try lower quality
+            maxQuality = midQuality;
+          }
+
+          // Close enough
+          if (maxQuality - minQuality < 0.02) break;
+        }
+
+        // If we couldn't get under target with quality adjustment, also try scaling down
+        if (bestBlob.size > targetBytes) {
+          let scale = 1.0;
+          while (bestBlob.size > targetBytes && scale > 0.3) {
+            scale -= 0.1;
+            const scaledCanvas = document.createElement("canvas");
+            const scaledCtx = scaledCanvas.getContext("2d")!;
+            scaledCanvas.width = Math.round(img.width * scale);
+            scaledCanvas.height = Math.round(img.height * scale);
+            scaledCtx.drawImage(img, 0, 0, scaledCanvas.width, scaledCanvas.height);
+            
+            bestBlob = await new Promise<Blob>((resolve) => {
+              scaledCanvas.toBlob((b) => resolve(b!), "image/jpeg", bestQuality);
+            });
+          }
+        }
+
+        // Convert blob to data URL
+        const resultUrl = await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(bestBlob);
+        });
+
+        const finalSizeKB = bestBlob.size / 1024;
+
+        addOperation({
+          type: "compress",
+          params: { targetSizeKB, quality: Math.round(bestQuality * 100) },
+          resultUrl,
+        });
+
+        return {
+          originalSize: Math.round(originalSizeKB),
+          finalSize: Math.round(finalSizeKB),
+          quality: Math.round(bestQuality * 100),
+        };
+      } finally {
+        setState((prev) => ({ ...prev, isProcessing: false }));
+      }
+    },
+    [state.currentImage, addOperation]
+  );
+
+  const extractLogo = useCallback(async (modelId?: string) => {
     if (!state.currentImage) return;
 
     setState((prev) => ({ ...prev, isProcessing: true }));
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.extractLogo(base64Data, state.mimeType);
+      const response = await api.extractLogo(base64Data, state.mimeType, modelId);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
         addOperation({
           type: "extract-logo",
+          params: { modelId: modelId || "default" },
           resultUrl,
         });
       } else {
@@ -211,19 +325,20 @@ export function useImageEditor() {
     }
   }, [state.currentImage, state.mimeType, addOperation]);
 
-  const removeBackground = useCallback(async () => {
+  const removeBackground = useCallback(async (modelId?: string) => {
     if (!state.currentImage) return;
 
     setState((prev) => ({ ...prev, isProcessing: true }));
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.removeBackground(base64Data, state.mimeType);
+      const response = await api.removeBackground(base64Data, state.mimeType, modelId);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
         addOperation({
           type: "remove-background",
+          params: { modelId: modelId || "default" },
           resultUrl,
         });
       } else {
@@ -234,19 +349,20 @@ export function useImageEditor() {
     }
   }, [state.currentImage, state.mimeType, addOperation]);
 
-  const removeLogo = useCallback(async () => {
+  const removeLogo = useCallback(async (modelId?: string) => {
     if (!state.currentImage) return;
 
     setState((prev) => ({ ...prev, isProcessing: true }));
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.removeLogo(base64Data, state.mimeType);
+      const response = await api.removeLogo(base64Data, state.mimeType, modelId);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
         addOperation({
           type: "remove-logo",
+          params: { modelId: modelId || "default" },
           resultUrl,
         });
       } else {
@@ -276,6 +392,7 @@ export function useImageEditor() {
     rotateImage,
     cropImage,
     resizeImage,
+    compressImage,
     extractLogo,
     removeBackground,
     removeLogo,
