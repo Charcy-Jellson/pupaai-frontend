@@ -161,6 +161,7 @@ export interface LogoPositionPayload {
 
 /**
  * Generate a product mockup with logo applied using AI
+ * @param targetColor - Optional hex color to change the product to (e.g., "#FF0000")
  */
 export async function generateMockup(
   productImageBase64: string,
@@ -168,6 +169,7 @@ export async function generateMockup(
   logoImageBase64: string,
   logoMimeType: string,
   logoPosition: LogoPositionPayload,
+  targetColor?: string,
   modelId?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildMockupUrl("generate", modelId), {
@@ -181,6 +183,7 @@ export async function generateMockup(
       logo_image_base64: logoImageBase64,
       logo_mime_type: logoMimeType,
       logo_position: logoPosition,
+      target_color: targetColor || null,
     }),
   });
 

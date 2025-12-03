@@ -399,3 +399,39 @@ export function getImageDimensions(file: File): Promise<{ width: number; height:
     img.src = URL.createObjectURL(file);
   });
 }
+
+/**
+ * Save a file from a data URL (base64) to storage
+ * Useful for saving generated/processed images
+ */
+export async function saveFileFromDataUrl(
+  userId: string,
+  dataUrl: string,
+  fileName: string,
+  folderId: string | null = null
+): Promise<FileRecord | null> {
+  try {
+    // Convert data URL to Blob
+    const response = await fetch(dataUrl);
+    const blob = await response.blob();
+    
+    // Create a File object from the Blob
+    const file = new File([blob], fileName, { type: blob.type });
+    
+    // Get image dimensions if it's an image
+    let dimensions: { width: number; height: number } | undefined;
+    if (blob.type.startsWith("image/")) {
+      try {
+        dimensions = await getImageDimensions(file);
+      } catch (e) {
+        // Continue without dimensions
+      }
+    }
+    
+    // Use the existing saveFile function
+    return await saveFile(userId, file, folderId, fileName, dimensions);
+  } catch (error) {
+    console.error("saveFileFromDataUrl error:", error);
+    return null;
+  }
+}
