@@ -78,6 +78,15 @@ function buildImageUrl(endpoint: string, modelId?: string): string {
   return url;
 }
 
+// Build URL for mockup API
+function buildMockupUrl(endpoint: string, modelId?: string): string {
+  const url = `${BACKEND_URL}/api/mockup/${endpoint}`;
+  if (modelId) {
+    return `${url}?model_id=${modelId}`;
+  }
+  return url;
+}
+
 // =============================================================================
 // Image Processing API (calls FastAPI backend)
 // =============================================================================
@@ -133,6 +142,45 @@ export async function removeLogo(
     body: JSON.stringify({
       image_base64: imageBase64,
       mime_type: mimeType,
+    }),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+// =============================================================================
+// Product Mockup API (calls FastAPI backend)
+// =============================================================================
+
+export interface LogoPositionPayload {
+  x: number;
+  y: number;
+  scale: number;
+  rotation: number;
+}
+
+/**
+ * Generate a product mockup with logo applied using AI
+ */
+export async function generateMockup(
+  productImageBase64: string,
+  productMimeType: string,
+  logoImageBase64: string,
+  logoMimeType: string,
+  logoPosition: LogoPositionPayload,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildMockupUrl("generate", modelId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      product_image_base64: productImageBase64,
+      product_mime_type: productMimeType,
+      logo_image_base64: logoImageBase64,
+      logo_mime_type: logoMimeType,
+      logo_position: logoPosition,
     }),
   });
 

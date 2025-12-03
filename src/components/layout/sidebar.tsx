@@ -21,6 +21,7 @@ import {
   ChevronRight,
   PanelLeftClose,
   PanelLeft,
+  Shirt,
 } from "lucide-react";
 
 interface NavItem {
@@ -44,6 +45,11 @@ const navigationGroups: NavGroup[] = [
         name: "Image Tools", 
         href: "/dashboard/image-tools", 
         icon: ImageIcon,
+      },
+      { 
+        name: "Product Mockup", 
+        href: "/dashboard/product-mockup", 
+        icon: Shirt,
       },
       { 
         name: "Model Studio", 
