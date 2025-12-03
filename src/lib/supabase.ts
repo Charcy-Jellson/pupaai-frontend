@@ -172,8 +172,28 @@ export async function deleteFolder(folderId: string): Promise<boolean> {
 // ==================== File Functions ====================
 
 // Helper to build storage path: users/{userId}/files/{fileId}/{originalFilename}
+/**
+ * Sanitize filename for Supabase Storage
+ * Replaces spaces and special characters with safe alternatives
+ */
+function sanitizeFileName(fileName: string): string {
+  // Get file extension
+  const lastDot = fileName.lastIndexOf(".");
+  const ext = lastDot > 0 ? fileName.slice(lastDot) : "";
+  const name = lastDot > 0 ? fileName.slice(0, lastDot) : fileName;
+  
+  // Replace spaces with underscores, remove special characters
+  const sanitized = name
+    .replace(/\s+/g, "_")           // Replace spaces with underscores
+    .replace(/[^a-zA-Z0-9_\-]/g, "") // Remove special characters
+    .slice(0, 100);                  // Limit length
+  
+  return sanitized + ext;
+}
+
 function buildStoragePath(userId: string, fileId: string, fileName: string): string {
-  return `users/${userId}/files/${fileId}/${fileName}`;
+  const safeFileName = sanitizeFileName(fileName);
+  return `users/${userId}/files/${fileId}/${safeFileName}`;
 }
 
 export async function saveFile(
@@ -184,7 +204,8 @@ export async function saveFile(
   dimensions?: { width: number; height: number }
 ): Promise<FileRecord | null> {
   try {
-    const fileName = customFileName || file.name;
+    const rawFileName = customFileName || file.name;
+    const fileName = sanitizeFileName(rawFileName); // Sanitize for storage compatibility
     
     // First create the database record to get the file ID
     const { data: fileRecord, error: dbError } = await supabase
