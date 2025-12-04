@@ -4,30 +4,48 @@ import { useState, useCallback } from "react";
 import type {
   MockupEditorState,
   LogoPosition,
-  ProductTemplate,
   ColorOption,
   MockupResult,
+  MockupPhase,
 } from "@/types/mockup";
-import { DEFAULT_LOGO_POSITION, PRESET_COLORS } from "@/types/mockup";
+import { DEFAULT_LOGO_POSITION } from "@/types/mockup";
 import * as api from "@/lib/api";
 import { generateId } from "@/lib/utils";
 
 const initialState: MockupEditorState = {
+  // Phase tracking
+  phase: "compose",
+  
+  // Phase 1: Compose
   productImage: null,
   productMimeType: "image/png",
   logoImage: null,
   logoMimeType: "image/png",
   logoPosition: DEFAULT_LOGO_POSITION,
+  firstMockup: null,
+  firstMockupMimeType: "image/png",
+  
+  // Phase 2: Recolor
+  confirmedMockup: null,
+  confirmedMockupMimeType: "image/png",
   selectedColors: [],
   results: [],
+  
+  // Processing state
   isProcessing: false,
   processingCount: 0,
   error: null,
+  
+  // Legacy
   selectedTemplate: null,
 };
 
 export function useMockupEditor() {
   const [state, setState] = useState<MockupEditorState>(initialState);
+
+  // ===========================================================================
+  // Phase 1: Compose - Image Selection
+  // ===========================================================================
 
   /**
    * Set product image from user upload or gallery
@@ -38,8 +56,12 @@ export function useMockupEditor() {
       productImage: imageDataUrl,
       productMimeType: mimeType,
       selectedTemplate: null,
-      results: [], // Clear results when product changes
+      // Reset subsequent states
+      firstMockup: null,
+      confirmedMockup: null,
+      results: [],
       error: null,
+      phase: "compose",
     }));
   }, []);
 
@@ -52,8 +74,11 @@ export function useMockupEditor() {
       productImage: null,
       productMimeType: "image/png",
       selectedTemplate: null,
+      firstMockup: null,
+      confirmedMockup: null,
       results: [],
       error: null,
+      phase: "compose",
     }));
   }, []);
 
@@ -65,8 +90,12 @@ export function useMockupEditor() {
       ...prev,
       logoImage: imageDataUrl,
       logoMimeType: mimeType,
-      results: [], // Clear results when logo changes
+      // Reset subsequent states
+      firstMockup: null,
+      confirmedMockup: null,
+      results: [],
       error: null,
+      phase: "compose",
     }));
   }, []);
 
@@ -79,8 +108,11 @@ export function useMockupEditor() {
       logoImage: null,
       logoMimeType: "image/png",
       logoPosition: DEFAULT_LOGO_POSITION,
+      firstMockup: null,
+      confirmedMockup: null,
       results: [],
       error: null,
+      phase: "compose",
     }));
   }, []);
 
@@ -91,7 +123,8 @@ export function useMockupEditor() {
     setState((prev) => ({
       ...prev,
       logoPosition: { ...prev.logoPosition, ...updates },
-      results: [], // Clear results when position changes
+      // Clear first mockup when position changes (need to regenerate)
+      firstMockup: null,
     }));
   }, []);
 
@@ -102,9 +135,114 @@ export function useMockupEditor() {
     setState((prev) => ({
       ...prev,
       logoPosition: DEFAULT_LOGO_POSITION,
-      results: [],
+      firstMockup: null,
     }));
   }, []);
+
+  // ===========================================================================
+  // Phase 1: Compose - Generate First Mockup
+  // ===========================================================================
+
+  /**
+   * Generate the first mockup (Phase 1) - logo compositing without color change
+   */
+  const generateFirstMockup = useCallback(async (modelId?: string) => {
+    if (!state.productImage || !state.logoImage) {
+      setState((prev) => ({
+        ...prev,
+        error: "Please upload both product image and logo",
+      }));
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      isProcessing: true,
+      error: null,
+      firstMockup: null,
+    }));
+
+    try {
+      // Extract base64 data from data URLs
+      const productBase64 = state.productImage.split(",")[1];
+      const logoBase64 = state.logoImage.split(",")[1];
+
+      const response = await api.generateMockup(
+        productBase64,
+        state.productMimeType,
+        logoBase64,
+        state.logoMimeType,
+        state.logoPosition,
+        undefined, // No color change for first mockup
+        modelId
+      );
+
+      if (response.success && response.data) {
+        const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
+        
+        setState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          firstMockup: resultUrl,
+          firstMockupMimeType: response.data!.mime_type,
+          error: null,
+        }));
+      } else {
+        throw new Error(response.error || "Failed to generate mockup");
+      }
+    } catch (error) {
+      setState((prev) => ({
+        ...prev,
+        isProcessing: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      }));
+    }
+  }, [state.productImage, state.logoImage, state.productMimeType, state.logoMimeType, state.logoPosition]);
+
+  // ===========================================================================
+  // Transition: Confirm and Move to Phase 2
+  // ===========================================================================
+
+  /**
+   * Confirm the first mockup and transition to Phase 2 (Recolor)
+   */
+  const confirmMockup = useCallback(() => {
+    if (!state.firstMockup) {
+      setState((prev) => ({
+        ...prev,
+        error: "No mockup to confirm. Please generate a mockup first.",
+      }));
+      return;
+    }
+
+    setState((prev) => ({
+      ...prev,
+      phase: "recolor",
+      confirmedMockup: prev.firstMockup,
+      confirmedMockupMimeType: prev.firstMockupMimeType,
+      selectedColors: [],
+      results: [],
+      error: null,
+    }));
+  }, [state.firstMockup]);
+
+  /**
+   * Go back to Phase 1 to adjust logo position
+   */
+  const goBackToCompose = useCallback(() => {
+    setState((prev) => ({
+      ...prev,
+      phase: "compose",
+      confirmedMockup: null,
+      selectedColors: [],
+      results: [],
+      error: null,
+    }));
+  }, []);
+
+  // ===========================================================================
+  // Phase 2: Recolor - Color Selection
+  // ===========================================================================
 
   /**
    * Update selected colors
@@ -118,13 +256,45 @@ export function useMockupEditor() {
   }, []);
 
   /**
-   * Generate mockups for all selected colors in parallel
+   * Add a single color to selection
    */
-  const generateMockups = useCallback(async (modelId?: string) => {
-    if (!state.productImage || !state.logoImage) {
+  const addSelectedColor = useCallback((color: ColorOption) => {
+    setState((prev) => {
+      if (prev.selectedColors.some((c) => c.hex === color.hex)) {
+        return prev; // Already selected
+      }
+      return {
+        ...prev,
+        selectedColors: [...prev.selectedColors, color],
+        results: [],
+      };
+    });
+  }, []);
+
+  /**
+   * Remove a single color from selection
+   */
+  const removeSelectedColor = useCallback((colorHex: string) => {
+    setState((prev) => ({
+      ...prev,
+      selectedColors: prev.selectedColors.filter((c) => c.hex !== colorHex),
+      results: [],
+    }));
+  }, []);
+
+  // ===========================================================================
+  // Phase 2: Recolor - Batch Generation
+  // ===========================================================================
+
+  /**
+   * Generate color variants using the recolor API (Phase 2)
+   * This is more efficient than regenerating the full mockup
+   */
+  const generateColorVariants = useCallback(async (modelId?: string) => {
+    if (!state.confirmedMockup) {
       setState((prev) => ({
         ...prev,
-        error: "Please upload both product image and logo",
+        error: "No confirmed mockup. Please confirm a mockup first.",
       }));
       return;
     }
@@ -137,9 +307,8 @@ export function useMockupEditor() {
       return;
     }
 
-    // Extract base64 data from data URLs
-    const productBase64 = state.productImage.split(",")[1];
-    const logoBase64 = state.logoImage.split(",")[1];
+    // Extract base64 from confirmed mockup
+    const mockupBase64 = state.confirmedMockup.split(",")[1];
 
     // Initialize results with pending status
     const initialResults: MockupResult[] = state.selectedColors.map((color) => ({
@@ -159,7 +328,7 @@ export function useMockupEditor() {
       error: null,
     }));
 
-    // Generate all mockups in parallel
+    // Generate all color variants in parallel using recolor API
     const promises = state.selectedColors.map(async (color, index) => {
       try {
         // Update status to processing
@@ -170,12 +339,10 @@ export function useMockupEditor() {
           ),
         }));
 
-        const response = await api.generateMockup(
-          productBase64,
-          state.productMimeType,
-          logoBase64,
-          state.logoMimeType,
-          state.logoPosition,
+        // Use the recolor API instead of generate - more efficient!
+        const response = await api.recolorMockup(
+          mockupBase64,
+          state.confirmedMockupMimeType,
           color.hex,
           modelId
         );
@@ -194,7 +361,7 @@ export function useMockupEditor() {
             ),
           }));
         } else {
-          throw new Error(response.error || "Failed to generate mockup");
+          throw new Error(response.error || "Failed to recolor mockup");
         }
       } catch (error) {
         // Update with error
@@ -222,13 +389,13 @@ export function useMockupEditor() {
       isProcessing: false,
       processingCount: 0,
     }));
-  }, [state.productImage, state.logoImage, state.productMimeType, state.logoMimeType, state.logoPosition, state.selectedColors]);
+  }, [state.confirmedMockup, state.confirmedMockupMimeType, state.selectedColors]);
 
   /**
-   * Retry generating a single color mockup
+   * Retry recoloring a single color mockup
    */
   const retryMockup = useCallback(async (colorHex: string, modelId?: string) => {
-    if (!state.productImage || !state.logoImage) return;
+    if (!state.confirmedMockup) return;
 
     const color = state.selectedColors.find((c) => c.hex === colorHex);
     if (!color) return;
@@ -246,15 +413,11 @@ export function useMockupEditor() {
     }));
 
     try {
-      const productBase64 = state.productImage.split(",")[1];
-      const logoBase64 = state.logoImage.split(",")[1];
+      const mockupBase64 = state.confirmedMockup.split(",")[1];
 
-      const response = await api.generateMockup(
-        productBase64,
-        state.productMimeType,
-        logoBase64,
-        state.logoMimeType,
-        state.logoPosition,
+      const response = await api.recolorMockup(
+        mockupBase64,
+        state.confirmedMockupMimeType,
         colorHex,
         modelId
       );
@@ -272,7 +435,7 @@ export function useMockupEditor() {
           ),
         }));
       } else {
-        throw new Error(response.error || "Failed to generate mockup");
+        throw new Error(response.error || "Failed to recolor mockup");
       }
     } catch (error) {
       setState((prev) => ({
@@ -289,7 +452,11 @@ export function useMockupEditor() {
         ),
       }));
     }
-  }, [state.productImage, state.logoImage, state.productMimeType, state.logoMimeType, state.logoPosition, state.selectedColors, state.results]);
+  }, [state.confirmedMockup, state.confirmedMockupMimeType, state.selectedColors, state.results]);
+
+  // ===========================================================================
+  // Download Utilities
+  // ===========================================================================
 
   /**
    * Download a single mockup result
@@ -319,6 +486,22 @@ export function useMockupEditor() {
   }, [state.results, downloadMockup]);
 
   /**
+   * Download the confirmed mockup (base version)
+   */
+  const downloadConfirmedMockup = useCallback(() => {
+    if (!state.confirmedMockup) return;
+
+    const link = document.createElement("a");
+    link.download = "mockup-base.png";
+    link.href = state.confirmedMockup;
+    link.click();
+  }, [state.confirmedMockup]);
+
+  // ===========================================================================
+  // Reset Utilities
+  // ===========================================================================
+
+  /**
    * Reset entire editor
    */
   const resetEditor = useCallback(() => {
@@ -341,17 +524,28 @@ export function useMockupEditor() {
 
   return {
     state,
+    // Phase 1: Compose
     setProductImage,
     clearProductImage,
     setLogoImage,
     clearLogoImage,
     updateLogoPosition,
     resetLogoPosition,
+    generateFirstMockup,
+    // Phase transition
+    confirmMockup,
+    goBackToCompose,
+    // Phase 2: Recolor
     setSelectedColors,
-    generateMockups,
+    addSelectedColor,
+    removeSelectedColor,
+    generateColorVariants,
     retryMockup,
+    // Downloads
     downloadMockup,
     downloadAllMockups,
+    downloadConfirmedMockup,
+    // Utils
     resetEditor,
     clearError,
     clearResults,

@@ -87,6 +87,15 @@ function buildMockupUrl(endpoint: string, modelId?: string): string {
   return url;
 }
 
+// Build URL for model studio API
+function buildModelStudioUrl(endpoint: string, modelId?: string): string {
+  const url = `${BACKEND_URL}/api/model-studio/${endpoint}`;
+  if (modelId) {
+    return `${url}?model_id=${modelId}`;
+  }
+  return url;
+}
+
 // =============================================================================
 // Image Processing API (calls FastAPI backend)
 // =============================================================================
@@ -160,7 +169,7 @@ export interface LogoPositionPayload {
 }
 
 /**
- * Generate a product mockup with logo applied using AI
+ * Generate a product mockup with logo applied using AI (Phase 1: Logo compositing)
  * @param targetColor - Optional hex color to change the product to (e.g., "#FF0000")
  */
 export async function generateMockup(
@@ -185,6 +194,104 @@ export async function generateMockup(
       logo_position: logoPosition,
       target_color: targetColor || null,
     }),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+/**
+ * Recolor a mockup image - change the product color while preserving the logo (Phase 2: Color variants)
+ * 
+ * This is more efficient than generateMockup for color variants because it doesn't re-composite the logo,
+ * only changes the garment color on an already-approved mockup.
+ * 
+ * @param mockupImageBase64 - Base64 encoded mockup image (from Phase 1)
+ * @param mockupMimeType - MIME type of the mockup image
+ * @param targetColor - Hex color to change product to (e.g., "#FF0000")
+ * @param modelId - Optional AI model UUID to use
+ */
+export async function recolorMockup(
+  mockupImageBase64: string,
+  mockupMimeType: string,
+  targetColor: string,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildMockupUrl("recolor", modelId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      mockup_image_base64: mockupImageBase64,
+      mockup_mime_type: mockupMimeType,
+      target_color: targetColor,
+    }),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+// =============================================================================
+// Model Studio API (calls FastAPI backend)
+// =============================================================================
+
+export type Ethnicity = "caucasian" | "black" | "asian" | "hispanic";
+export type Gender = "male" | "female";
+export type HairLength = "long" | "short";
+export type AgeGroup = "teen" | "adult" | "middle_aged";
+export type SceneOption = "original" | "home" | "street" | "office";
+export type PoseOption = "front_standing" | "side_standing" | "front_sitting";
+export type PantsType = "yoga_pants" | "jeans";
+
+export interface GenerateModelRequest {
+  ethnicity: Ethnicity;
+  gender: Gender;
+  hair_length: HairLength;
+  glasses: boolean;
+  age_group: AgeGroup;
+}
+
+export interface DressModelRequest {
+  model_image_base64: string;
+  model_mime_type: string;
+  clothing_image_base64: string;
+  clothing_mime_type: string;
+  scene: SceneOption;
+  pose: PoseOption;
+  pants_type: PantsType;
+}
+
+/**
+ * Generate an AI fashion model based on specified characteristics
+ */
+export async function generateFashionModel(
+  options: GenerateModelRequest,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildModelStudioUrl("generate-model", modelId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(options),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+/**
+ * Dress a model in the specified clothing item
+ */
+export async function dressModel(
+  request: DressModelRequest,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildModelStudioUrl("dress-model", modelId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
   });
 
   return handleResponse<ProcessedImageResponse>(response);

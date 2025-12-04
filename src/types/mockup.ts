@@ -75,8 +75,15 @@ export const PRESET_COLORS: ColorOption[] = [
 ];
 
 // =============================================================================
-// Batch Generation Types
+// Two-Phase Workflow Types
 // =============================================================================
+
+/**
+ * Phase of the mockup generation workflow
+ * - compose: Phase 1 - Select product, logo, position, generate first mockup
+ * - recolor: Phase 2 - Confirm mockup looks good, select colors, batch recolor
+ */
+export type MockupPhase = "compose" | "recolor";
 
 /**
  * Result status for batch generation
@@ -96,10 +103,15 @@ export interface MockupResult {
 }
 
 /**
- * State for the mockup editor (updated for batch generation)
+ * State for the mockup editor (two-phase workflow)
  */
 export interface MockupEditorState {
-  /** Selected product template or custom uploaded image */
+  // ========== Phase Tracking ==========
+  /** Current workflow phase */
+  phase: MockupPhase;
+  
+  // ========== Phase 1: Compose ==========
+  /** Selected product image */
   productImage: string | null;
   productMimeType: string;
   /** Logo image to be applied */
@@ -107,16 +119,28 @@ export interface MockupEditorState {
   logoMimeType: string;
   /** Current logo position and transformation */
   logoPosition: LogoPosition;
+  /** First generated mockup (before color variants) */
+  firstMockup: string | null;
+  firstMockupMimeType: string;
+  
+  // ========== Phase 2: Recolor ==========
+  /** Confirmed mockup that user approved (used as base for recoloring) */
+  confirmedMockup: string | null;
+  confirmedMockupMimeType: string;
   /** Selected colors for batch generation */
   selectedColors: ColorOption[];
-  /** Generated mockup results (for batch) */
+  /** Generated mockup results (for batch recoloring) */
   results: MockupResult[];
+  
+  // ========== Processing State ==========
   /** Processing state */
   isProcessing: boolean;
   /** Number of mockups currently being generated */
   processingCount: number;
   /** Error message if any */
   error: string | null;
+  
+  // ========== Legacy/Template Support ==========
   /** Selected template (if using from gallery) */
   selectedTemplate: ProductTemplate | null;
 }

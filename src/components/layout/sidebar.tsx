@@ -18,10 +18,10 @@ import {
   Users,
   Settings,
   ChevronLeft,
-  ChevronRight,
   PanelLeftClose,
   PanelLeft,
   Shirt,
+  User,
 } from "lucide-react";
 
 interface NavItem {
@@ -54,8 +54,7 @@ const navigationGroups: NavGroup[] = [
       { 
         name: "Model Studio", 
         href: "/dashboard/model-studio", 
-        icon: Palette,
-        badge: "Soon",
+        icon: User,
       },
       { 
         name: "Video Tools", 

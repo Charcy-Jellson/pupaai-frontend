@@ -13,9 +13,12 @@ import {
   getUserFiles,
   getAllUserFolders,
   getFileUrl,
+  createFolder,
   type FileRecord,
   type FolderRecord,
 } from "@/lib/supabase";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
 import {
   Upload,
   ImageIcon,
@@ -26,6 +29,7 @@ import {
   ArrowLeft,
   X,
   Check,
+  Plus,
 } from "lucide-react";
 
 interface ImagePickerProps {
@@ -47,6 +51,7 @@ export function ImagePicker({
 }: ImagePickerProps) {
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   // Gallery state
   const [files, setFiles] = useState<FileRecord[]>([]);
@@ -55,6 +60,11 @@ export function ImagePicker({
   const [folderPath, setFolderPath] = useState<FolderRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<string>("upload");
+
+  // New folder state
+  const [showNewFolder, setShowNewFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   // Load gallery content
   useEffect(() => {
@@ -118,6 +128,31 @@ export function ImagePicker({
   const navigateToRoot = () => {
     setFolderPath([]);
     setCurrentFolderId(null);
+  };
+
+  // Create new folder
+  const handleCreateFolder = async () => {
+    if (!user?.id || !newFolderName.trim()) return;
+
+    setIsCreatingFolder(true);
+    const folder = await createFolder(user.id, newFolderName.trim(), currentFolderId);
+
+    if (folder) {
+      setFolders((prev) => [...prev, folder]);
+      setNewFolderName("");
+      setShowNewFolder(false);
+      toast({
+        title: "Folder Created",
+        description: `"${folder.name}" has been created.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create folder.",
+        variant: "destructive",
+      });
+    }
+    setIsCreatingFolder(false);
   };
 
   // Handle gallery image selection - convert URL to data URL
@@ -248,19 +283,76 @@ export function ImagePicker({
                   </div>
                 ))}
 
+                <div className="flex-1" />
+
                 {currentFolderId && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={navigateBack}
-                    className="h-6 px-1.5 ml-auto"
+                    className="h-6 px-1.5"
                     disabled={disabled}
                   >
                     <ArrowLeft className="w-3 h-3 mr-1" />
                     Back
                   </Button>
                 )}
+
+                {/* New folder button */}
+                {!showNewFolder && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowNewFolder(true)}
+                    className="h-6 px-1.5"
+                    disabled={disabled}
+                  >
+                    <Plus className="w-3 h-3 mr-1" />
+                    New
+                  </Button>
+                )}
               </div>
+
+              {/* New folder input */}
+              {showNewFolder && (
+                <div className="flex gap-1 mb-2">
+                  <Input
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="Folder name"
+                    className="h-7 text-xs flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateFolder();
+                      if (e.key === "Escape") {
+                        setShowNewFolder(false);
+                        setNewFolderName("");
+                      }
+                    }}
+                    autoFocus
+                    disabled={disabled || isCreatingFolder}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleCreateFolder}
+                    disabled={!newFolderName.trim() || isCreatingFolder || disabled}
+                    className="h-7 text-xs px-2"
+                  >
+                    {isCreatingFolder ? "..." : "OK"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setShowNewFolder(false);
+                      setNewFolderName("");
+                    }}
+                    className="h-7 text-xs px-2"
+                    disabled={isCreatingFolder}
+                  >
+                    ✕
+                  </Button>
+                </div>
+              )}
 
               {/* Gallery Content */}
               {loading ? (
