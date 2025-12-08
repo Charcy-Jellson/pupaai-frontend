@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -44,12 +45,21 @@ export function ModelStudioResults({
 }: ModelStudioResultsProps) {
   const { user } = useUser();
   const { toast } = useToast();
+  const pathname = usePathname();
   
   const [previewResult, setPreviewResult] = useState<ModelStudioResult | null>(null);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [fileToSave, setFileToSave] = useState<ModelStudioResult | null>(null);
   const [saveAllMode, setSaveAllMode] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  useEffect(() => {
+    setPreviewResult(null);
+    setSaveDialogOpen(false);
+    setFileToSave(null);
+    setSaveAllMode(false);
+  }, [pathname]);
 
   const successfulResults = results.filter(
     (r) => r.status === "fulfilled" && r.imageDataUrl
@@ -350,4 +360,8 @@ export function ModelStudioResults({
     </>
   );
 }
+
+
+
+
 

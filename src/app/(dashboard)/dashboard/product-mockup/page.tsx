@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -49,6 +50,7 @@ import { LoadingSpinner } from "@/components/common/loading-spinner";
 export default function ProductMockupPage() {
   const { user } = useUser();
   const { toast } = useToast();
+  const pathname = usePathname();
 
   const {
     state,
@@ -85,6 +87,12 @@ export default function ProductMockupPage() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  useEffect(() => {
+    setSaveDialogOpen(false);
+    setShowNewFolder(false);
+  }, [pathname]);
 
   // Check if ready for Phase 1 (generate first mockup)
   const canGenerateFirst =
@@ -332,18 +340,22 @@ export default function ProductMockupPage() {
                   title="Product Image"
                   icon={<Shirt className="w-4 h-4 text-violet-400" />}
                   selectedImage={state.productImage}
+                  selectedMimeType={state.productMimeType}
                   onImageSelect={setProductImage}
                   onClear={clearProductImage}
                   disabled={state.isProcessing}
+                  allowSaveToGallery={true}
                 />
 
                 <ImagePicker
                   title="Logo"
                   icon={<Sparkles className="w-4 h-4 text-fuchsia-400" />}
                   selectedImage={state.logoImage}
+                  selectedMimeType={state.logoMimeType}
                   onImageSelect={setLogoImage}
                   onClear={clearLogoImage}
                   disabled={state.isProcessing}
+                  allowSaveToGallery={true}
                 />
               </div>
 

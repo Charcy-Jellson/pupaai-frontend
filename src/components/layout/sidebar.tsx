@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,7 @@ import {
   PanelLeft,
   Shirt,
   User,
+  Wand2,
 } from "lucide-react";
 
 interface NavItem {
@@ -55,6 +56,11 @@ const navigationGroups: NavGroup[] = [
         name: "Model Studio", 
         href: "/dashboard/model-studio", 
         icon: User,
+      },
+      { 
+        name: "Logo Studio", 
+        href: "/dashboard/logo-studio", 
+        icon: Wand2,
       },
       { 
         name: "Video Tools", 
@@ -250,21 +256,45 @@ export function MobileSidebar({
   isOpen: boolean; 
   onClose: () => void;
 }) {
+  // Close on Escape key press
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    
+    if (isOpen) {
+      document.addEventListener("keydown", handleEscape);
+      // Prevent body scroll when mobile menu is open
+      document.body.style.overflow = "hidden";
+    }
+    
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+      document.body.style.overflow = "";
+    };
+  }, [isOpen, onClose]);
+
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && (
         <>
           {/* Backdrop */}
           <motion.div
+            key="mobile-sidebar-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={onClose}
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
+            aria-hidden="true"
           />
           
           {/* Sidebar */}
           <motion.div
+            key="mobile-sidebar-content"
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}

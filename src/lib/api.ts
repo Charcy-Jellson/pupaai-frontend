@@ -119,12 +119,20 @@ export async function extractLogo(
   return handleResponse<ProcessedImageResponse>(response);
 }
 
+/**
+ * Remove background from an image using local rembg (U2-Net model).
+ * This is fast and produces true transparent PNG output.
+ * No AI model selection needed - uses the built-in U2-Net model.
+ */
 export async function removeBackground(
   imageBase64: string,
   mimeType: string,
-  modelId?: string
+  // modelId is kept for API compatibility but not used - always uses local rembg
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  _modelId?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
-  const response = await fetch(buildImageUrl("remove-background", modelId), {
+  // Use the local rembg endpoint instead of AI models
+  const response = await fetch(`${BACKEND_URL}/api/image/remove-background-local`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -287,6 +295,68 @@ export async function dressModel(
   modelId?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildModelStudioUrl("dress-model", modelId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+// =============================================================================
+// Logo Studio API (calls FastAPI backend)
+// =============================================================================
+
+export type LogoStyle = "minimalist" | "vintage" | "modern" | "playful";
+
+export interface GenerateLogoRequest {
+  description: string;
+  style?: LogoStyle;
+  colors?: string[];
+}
+
+export interface EditLogoRequest {
+  image_base64: string;
+  mime_type: string;
+  instruction: string;
+}
+
+/**
+ * Generate a logo from text description using AI
+ */
+export async function generateLogo(
+  request: GenerateLogoRequest,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const url = modelId 
+    ? `${BACKEND_URL}/api/logo-studio/generate?model_id=${modelId}`
+    : `${BACKEND_URL}/api/logo-studio/generate`;
+    
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+/**
+ * Edit an existing logo based on text instructions
+ */
+export async function editLogo(
+  request: EditLogoRequest,
+  modelId?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const url = modelId 
+    ? `${BACKEND_URL}/api/logo-studio/edit?model_id=${modelId}`
+    : `${BACKEND_URL}/api/logo-studio/edit`;
+    
+  const response = await fetch(url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, Plus, X, Palette } from "lucide-react";
+import { Check, Plus, X, Palette, Save, Trash2, Loader2 } from "lucide-react";
 import { PRESET_COLORS, type ColorOption } from "@/types/mockup";
+
+interface SavedColor {
+  id: string;
+  user_id: string;
+  name: string;
+  hex: string;
+  created_at: string;
+}
 
 interface ColorSelectorProps {
   selectedColors: ColorOption[];
@@ -25,6 +33,32 @@ export function ColorSelector({
   const [customColorInput, setCustomColorInput] = useState("#");
   const [customColorName, setCustomColorName] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
+  
+  // User saved colors state
+  const [savedColors, setSavedColors] = useState<SavedColor[]>([]);
+  const [isLoadingSavedColors, setIsLoadingSavedColors] = useState(true);
+  const [isSavingColor, setIsSavingColor] = useState(false);
+  const [isDeletingColor, setIsDeletingColor] = useState<string | null>(null);
+
+  // Load saved colors on mount
+  useEffect(() => {
+    loadSavedColors();
+  }, []);
+
+  const loadSavedColors = async () => {
+    try {
+      setIsLoadingSavedColors(true);
+      const response = await fetch("/api/colors");
+      if (response.ok) {
+        const data = await response.json();
+        setSavedColors(data.colors || []);
+      }
+    } catch (error) {
+      console.error("Error loading saved colors:", error);
+    } finally {
+      setIsLoadingSavedColors(false);
+    }
+  };
 
   // Toggle color selection
   const toggleColor = useCallback(
@@ -42,7 +76,7 @@ export function ColorSelector({
     [selectedColors, onColorsChange, disabled]
   );
 
-  // Add custom color
+  // Add custom color (to current selection only, not saved)
   const handleAddCustomColor = useCallback(() => {
     if (!customColorInput || customColorInput === "#") return;
 
@@ -67,6 +101,63 @@ export function ColorSelector({
     setCustomColorName("");
     setIsAddingCustom(false);
   }, [customColorInput, customColorName, selectedColors, onColorsChange]);
+
+  // Save color to user's persistent storage
+  const handleSaveColor = useCallback(async () => {
+    if (!customColorInput || customColorInput === "#") return;
+
+    const hexRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (!hexRegex.test(customColorInput)) {
+      return;
+    }
+
+    try {
+      setIsSavingColor(true);
+      const response = await fetch("/api/colors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: customColorName || `Custom (${customColorInput})`,
+          hex: customColorInput.toUpperCase(),
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSavedColors((prev) => [...prev, data.color]);
+        setCustomColorInput("#");
+        setCustomColorName("");
+        setIsAddingCustom(false);
+      } else {
+        const error = await response.json();
+        console.error("Failed to save color:", error.error);
+      }
+    } catch (error) {
+      console.error("Error saving color:", error);
+    } finally {
+      setIsSavingColor(false);
+    }
+  }, [customColorInput, customColorName]);
+
+  // Delete saved color
+  const handleDeleteSavedColor = useCallback(async (colorId: string) => {
+    try {
+      setIsDeletingColor(colorId);
+      const response = await fetch(`/api/colors?id=${colorId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setSavedColors((prev) => prev.filter((c) => c.id !== colorId));
+        // Also remove from selection if it was selected
+        onColorsChange(selectedColors.filter((c) => c.id !== colorId));
+      }
+    } catch (error) {
+      console.error("Error deleting color:", error);
+    } finally {
+      setIsDeletingColor(null);
+    }
+  }, [selectedColors, onColorsChange]);
 
   // Remove a selected color
   const removeColor = useCallback(
@@ -95,6 +186,13 @@ export function ColorSelector({
     if (disabled) return;
     onColorsChange([]);
   }, [onColorsChange, disabled]);
+
+  // Convert saved color to ColorOption
+  const savedColorToOption = (saved: SavedColor): ColorOption => ({
+    id: saved.id,
+    name: saved.name,
+    hex: saved.hex,
+  });
 
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50">
@@ -128,52 +226,141 @@ export function ColorSelector({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Preset Colors Grid */}
-        <div className="grid grid-cols-6 gap-2">
-          {PRESET_COLORS.map((color) => {
-            const isSelected = selectedColors.some((c) => c.hex === color.hex);
-            const isWhite = color.hex === "#FFFFFF";
+        <div>
+          <Label className="text-xs text-muted-foreground mb-2 block">
+            Default Colors
+          </Label>
+          <div className="grid grid-cols-6 gap-2">
+            {PRESET_COLORS.map((color) => {
+              const isSelected = selectedColors.some((c) => c.hex === color.hex);
+              const isWhite = color.hex === "#FFFFFF";
 
-            return (
-              <motion.button
-                key={color.id}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => toggleColor(color)}
-                disabled={disabled}
-                className={cn(
-                  "relative w-10 h-10 rounded-full transition-all",
-                  "border-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50",
-                  isSelected
-                    ? "border-violet-500 shadow-lg shadow-violet-500/30"
-                    : isWhite
-                    ? "border-gray-300"
-                    : "border-transparent",
-                  disabled && "opacity-50 cursor-not-allowed"
-                )}
-                style={{ backgroundColor: color.hex }}
-                title={color.name}
-              >
-                <AnimatePresence>
-                  {isSelected && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      exit={{ scale: 0 }}
-                      className={cn(
-                        "absolute inset-0 flex items-center justify-center rounded-full",
-                        isWhite || color.hex === "#EAB308"
-                          ? "text-gray-800"
-                          : "text-white"
-                      )}
-                    >
-                      <Check className="w-5 h-5" strokeWidth={3} />
-                    </motion.div>
+              return (
+                <motion.button
+                  key={color.id}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => toggleColor(color)}
+                  disabled={disabled}
+                  className={cn(
+                    "relative w-10 h-10 rounded-full transition-all",
+                    "border-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50",
+                    isSelected
+                      ? "border-violet-500 shadow-lg shadow-violet-500/30"
+                      : isWhite
+                      ? "border-gray-300"
+                      : "border-transparent",
+                    disabled && "opacity-50 cursor-not-allowed"
                   )}
-                </AnimatePresence>
-              </motion.button>
-            );
-          })}
+                  style={{ backgroundColor: color.hex }}
+                  title={color.name}
+                >
+                  <AnimatePresence>
+                    {isSelected && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className={cn(
+                          "absolute inset-0 flex items-center justify-center rounded-full",
+                          isWhite || color.hex === "#E8E2CC"
+                            ? "text-gray-800"
+                            : "text-white"
+                        )}
+                      >
+                        <Check className="w-5 h-5" strokeWidth={3} />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
+
+        {/* User Saved Colors */}
+        {(savedColors.length > 0 || isLoadingSavedColors) && (
+          <div className="border-t border-border/50 pt-3">
+            <Label className="text-xs text-muted-foreground mb-2 block">
+              My Saved Colors
+            </Label>
+            {isLoadingSavedColors ? (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-6 gap-2">
+                {savedColors.map((saved) => {
+                  const color = savedColorToOption(saved);
+                  const isSelected = selectedColors.some((c) => c.hex === color.hex);
+                  const isWhite = color.hex === "#FFFFFF";
+                  const isDeleting = isDeletingColor === saved.id;
+
+                  return (
+                    <div key={saved.id} className="relative group">
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleColor(color)}
+                        disabled={disabled || isDeleting}
+                        className={cn(
+                          "relative w-10 h-10 rounded-full transition-all",
+                          "border-2 focus:outline-none focus:ring-2 focus:ring-violet-500/50",
+                          isSelected
+                            ? "border-violet-500 shadow-lg shadow-violet-500/30"
+                            : isWhite
+                            ? "border-gray-300"
+                            : "border-transparent",
+                          (disabled || isDeleting) && "opacity-50 cursor-not-allowed"
+                        )}
+                        style={{ backgroundColor: color.hex }}
+                        title={color.name}
+                      >
+                        <AnimatePresence>
+                          {isSelected && (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              exit={{ scale: 0 }}
+                              className={cn(
+                                "absolute inset-0 flex items-center justify-center rounded-full",
+                                isWhite || color.hex === "#E8E2CC"
+                                  ? "text-gray-800"
+                                  : "text-white"
+                              )}
+                            >
+                              <Check className="w-5 h-5" strokeWidth={3} />
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </motion.button>
+                      {/* Delete button on hover */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSavedColor(saved.id);
+                        }}
+                        disabled={isDeleting}
+                        className={cn(
+                          "absolute -top-1 -right-1 w-4 h-4 rounded-full bg-destructive text-destructive-foreground",
+                          "flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity",
+                          "hover:bg-destructive/80"
+                        )}
+                        title="Delete color"
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                        ) : (
+                          <X className="w-2.5 h-2.5" />
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Custom Color Input */}
         <div className="border-t border-border/50 pt-3">
@@ -221,24 +408,40 @@ export function ColorSelector({
               <div className="flex gap-2">
                 <Button
                   size="sm"
+                  variant="outline"
                   onClick={handleAddCustomColor}
                   disabled={!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(customColorInput)}
                   className="flex-1"
                 >
-                  Add Color
+                  <Plus className="w-3 h-3 mr-1" />
+                  Use Once
                 </Button>
                 <Button
-                  variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setIsAddingCustom(false);
-                    setCustomColorInput("#");
-                    setCustomColorName("");
-                  }}
+                  onClick={handleSaveColor}
+                  disabled={!/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(customColorInput) || isSavingColor}
+                  className="flex-1"
                 >
-                  Cancel
+                  {isSavingColor ? (
+                    <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                  ) : (
+                    <Save className="w-3 h-3 mr-1" />
+                  )}
+                  Save Color
                 </Button>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setIsAddingCustom(false);
+                  setCustomColorInput("#");
+                  setCustomColorName("");
+                }}
+              >
+                Cancel
+              </Button>
             </div>
           )}
         </div>
@@ -284,4 +487,3 @@ export function ColorSelector({
     </Card>
   );
 }
-

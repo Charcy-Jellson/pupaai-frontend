@@ -14,6 +14,7 @@ import {
   getAllUserFolders,
   getFileUrl,
   createFolder,
+  saveFileFromDataUrl,
   type FileRecord,
   type FolderRecord,
 } from "@/lib/supabase";
@@ -30,24 +31,37 @@ import {
   X,
   Check,
   Plus,
+  Save,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 interface ImagePickerProps {
   title: string;
   icon?: React.ReactNode;
   selectedImage: string | null;
+  selectedMimeType?: string;
   onImageSelect: (dataUrl: string, mimeType: string) => void;
   onClear: () => void;
   disabled?: boolean;
+  /** Allow saving the selected image to Gallery */
+  allowSaveToGallery?: boolean;
 }
 
 export function ImagePicker({
   title,
   icon,
   selectedImage,
+  selectedMimeType = "image/png",
   onImageSelect,
   onClear,
   disabled = false,
+  allowSaveToGallery = false,
 }: ImagePickerProps) {
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,6 +79,15 @@ export function ImagePicker({
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  // Save to Gallery dialog state
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [saveFolderId, setSaveFolderId] = useState<string | null>(null);
+  const [saveFolderPath, setSaveFolderPath] = useState<FolderRecord[]>([]);
+  const [saveFolders, setSaveFolders] = useState<FolderRecord[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaveNewFolder, setShowSaveNewFolder] = useState(false);
+  const [saveNewFolderName, setSaveNewFolderName] = useState("");
 
   // Load gallery content
   useEffect(() => {
@@ -153,6 +176,117 @@ export function ImagePicker({
       });
     }
     setIsCreatingFolder(false);
+  };
+
+  // Load folders for save dialog
+  const loadSaveFolders = async () => {
+    if (!user?.id) return;
+    const userFolders = await getAllUserFolders(user.id);
+    const currentFolders = userFolders.filter((f) => f.parent_id === saveFolderId);
+    setSaveFolders(currentFolders);
+  };
+
+  // Open save dialog
+  const openSaveDialog = async () => {
+    setSaveDialogOpen(true);
+    setSaveFolderId(null);
+    setSaveFolderPath([]);
+    await loadSaveFolders();
+  };
+
+  // Navigate in save dialog
+  const navigateToSaveFolder = async (folder: FolderRecord) => {
+    setSaveFolderPath((prev) => [...prev, folder]);
+    setSaveFolderId(folder.id);
+    if (!user?.id) return;
+    const userFolders = await getAllUserFolders(user.id);
+    const currentFolders = userFolders.filter((f) => f.parent_id === folder.id);
+    setSaveFolders(currentFolders);
+  };
+
+  const navigateSaveBack = async () => {
+    const newPath = [...saveFolderPath];
+    newPath.pop();
+    setSaveFolderPath(newPath);
+    const newFolderId = newPath.length > 0 ? newPath[newPath.length - 1].id : null;
+    setSaveFolderId(newFolderId);
+    if (!user?.id) return;
+    const userFolders = await getAllUserFolders(user.id);
+    const currentFolders = userFolders.filter((f) => f.parent_id === newFolderId);
+    setSaveFolders(currentFolders);
+  };
+
+  const navigateSaveToRoot = async () => {
+    setSaveFolderPath([]);
+    setSaveFolderId(null);
+    await loadSaveFolders();
+  };
+
+  // Create folder in save dialog
+  const handleCreateSaveFolder = async () => {
+    if (!user?.id || !saveNewFolderName.trim()) return;
+
+    setIsCreatingFolder(true);
+    const folder = await createFolder(user.id, saveNewFolderName.trim(), saveFolderId);
+
+    if (folder) {
+      setSaveFolders((prev) => [...prev, folder]);
+      setSaveNewFolderName("");
+      setShowSaveNewFolder(false);
+      toast({
+        title: "Folder Created",
+        description: `"${folder.name}" has been created.`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create folder.",
+        variant: "destructive",
+      });
+    }
+    setIsCreatingFolder(false);
+  };
+
+  // Save image to Gallery
+  const handleSaveToGallery = async () => {
+    if (!user?.id || !selectedImage) return;
+
+    setIsSaving(true);
+    try {
+      const timestamp = Date.now();
+      const ext = selectedMimeType.includes("png") ? "png" : "jpg";
+      const filename = `${title.toLowerCase().replace(/\s+/g, "-")}-${timestamp}.${ext}`;
+
+      const saved = await saveFileFromDataUrl(
+        user.id,
+        selectedImage,
+        filename,
+        saveFolderId
+      );
+
+      if (saved) {
+        toast({
+          title: "Saved to Gallery",
+          description: `Image saved as "${filename}"`,
+        });
+        setSaveDialogOpen(false);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to save image.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error saving image:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save image.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Handle gallery image selection - convert URL to data URL
@@ -425,22 +559,221 @@ export function ImagePicker({
           </Tabs>
         )}
 
-        {/* Change button when image is selected */}
+        {/* Action buttons when image is selected */}
         {selectedImage && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => {
-              onClear();
-              setActiveTab("upload");
-            }}
-            disabled={disabled}
-          >
-            Change Image
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => {
+                onClear();
+                setActiveTab("upload");
+              }}
+              disabled={disabled}
+            >
+              Change Image
+            </Button>
+            {allowSaveToGallery && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={openSaveDialog}
+                disabled={disabled}
+                className="gap-1"
+              >
+                <Save className="w-3.5 h-3.5" />
+                Save
+              </Button>
+            )}
+          </div>
         )}
       </CardContent>
+
+      {/* Save to Gallery Dialog */}
+      <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Save className="w-5 h-5 text-violet-400" />
+              Save to Gallery
+            </DialogTitle>
+          </DialogHeader>
+
+          {/* Folder Navigation */}
+          <div className="space-y-3">
+            {/* Breadcrumb */}
+            <div className="flex items-center gap-1 text-sm">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={navigateSaveToRoot}
+                className="h-7 px-2"
+              >
+                <Home className="w-3.5 h-3.5" />
+              </Button>
+
+              {saveFolderPath.map((folder, index) => (
+                <div key={folder.id} className="flex items-center gap-0.5">
+                  <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const newPath = saveFolderPath.slice(0, index + 1);
+                      setSaveFolderPath(newPath);
+                      setSaveFolderId(folder.id);
+                      if (user?.id) {
+                        getAllUserFolders(user.id).then((userFolders) => {
+                          const currentFolders = userFolders.filter((f) => f.parent_id === folder.id);
+                          setSaveFolders(currentFolders);
+                        });
+                      }
+                    }}
+                    className="h-7 px-2 text-sm"
+                  >
+                    {folder.name}
+                  </Button>
+                </div>
+              ))}
+
+              <div className="flex-1" />
+
+              {saveFolderId && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={navigateSaveBack}
+                  className="h-7 px-2"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
+                  Back
+                </Button>
+              )}
+            </div>
+
+            {/* New folder button */}
+            {!showSaveNewFolder && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSaveNewFolder(true)}
+                className="gap-1"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                New Folder
+              </Button>
+            )}
+
+            {/* New folder input */}
+            {showSaveNewFolder && (
+              <div className="flex gap-2">
+                <Input
+                  value={saveNewFolderName}
+                  onChange={(e) => setSaveNewFolderName(e.target.value)}
+                  placeholder="Folder name"
+                  className="flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleCreateSaveFolder();
+                    if (e.key === "Escape") {
+                      setShowSaveNewFolder(false);
+                      setSaveNewFolderName("");
+                    }
+                  }}
+                  autoFocus
+                  disabled={isCreatingFolder}
+                />
+                <Button
+                  size="sm"
+                  onClick={handleCreateSaveFolder}
+                  disabled={!saveNewFolderName.trim() || isCreatingFolder}
+                >
+                  {isCreatingFolder ? "..." : "Create"}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowSaveNewFolder(false);
+                    setSaveNewFolderName("");
+                  }}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Folders list */}
+            <ScrollArea className="h-48 border rounded-lg p-2">
+              <div className="space-y-1">
+                {saveFolders.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+                    <FolderOpen className="w-8 h-8 mb-2" />
+                    <p className="text-sm">
+                      {saveFolderId ? "Empty folder" : "No folders"}
+                    </p>
+                    <p className="text-xs mt-1">
+                      Will save to{" "}
+                      {saveFolderPath.length > 0
+                        ? saveFolderPath[saveFolderPath.length - 1].name
+                        : "root"}
+                    </p>
+                  </div>
+                ) : (
+                  saveFolders.map((folder) => (
+                    <motion.div
+                      key={folder.id}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => navigateToSaveFolder(folder)}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded-lg",
+                        "border border-border/50 hover:border-violet-500/50",
+                        "bg-muted/30 hover:bg-muted/50",
+                        "transition-all cursor-pointer"
+                      )}
+                    >
+                      <Folder className="w-5 h-5 text-violet-400" />
+                      <span className="text-sm">{folder.name}</span>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Current save location */}
+            <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
+              <span className="font-medium">Save to: </span>
+              {saveFolderPath.length > 0
+                ? saveFolderPath.map((f) => f.name).join(" / ")
+                : "Root folder"}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSaveDialogOpen(false)}
+              disabled={isSaving}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSaveToGallery} disabled={isSaving}>
+              {isSaving ? (
+                <>
+                  <LoadingSpinner size="sm" className="mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  Save Here
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

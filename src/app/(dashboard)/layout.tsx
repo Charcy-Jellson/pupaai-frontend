@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { Sidebar, MobileSidebar } from "@/components/layout/sidebar";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,12 @@ export default function DashboardLayout({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, isLoaded } = useUser();
+  const pathname = usePathname();
+
+  // Close mobile menu when route changes to prevent overlay from getting stuck
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,6 +112,8 @@ export default function DashboardLayout({
     </div>
   );
 }
+
+
 
 
 

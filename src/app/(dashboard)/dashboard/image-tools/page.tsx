@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { useImageEditor } from "@/hooks/use-image-editor";
@@ -47,6 +48,7 @@ export default function ImageToolsPage() {
   const { toast } = useToast();
   const editor = useImageEditor();
   const { role } = useUserRole();
+  const pathname = usePathname();
   const isAdmin = role === "admin";
   const [activeTab, setActiveTab] = useState<"upload" | "gallery">("upload");
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -60,6 +62,12 @@ export default function ImageToolsPage() {
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  useEffect(() => {
+    setSaveDialogOpen(false);
+    setShowNewFolderInput(false);
+  }, [pathname]);
 
   // Load user folders
   useEffect(() => {

@@ -62,16 +62,10 @@ export interface ColorOption {
 export const PRESET_COLORS: ColorOption[] = [
   { id: "white", name: "White", hex: "#FFFFFF" },
   { id: "black", name: "Black", hex: "#000000" },
-  { id: "red", name: "Red", hex: "#EF4444" },
-  { id: "blue", name: "Blue", hex: "#3B82F6" },
-  { id: "green", name: "Green", hex: "#22C55E" },
-  { id: "gray", name: "Gray", hex: "#6B7280" },
-  { id: "navy", name: "Navy", hex: "#1E3A5F" },
-  { id: "pink", name: "Pink", hex: "#EC4899" },
-  { id: "yellow", name: "Yellow", hex: "#EAB308" },
-  { id: "purple", name: "Purple", hex: "#A855F7" },
-  { id: "orange", name: "Orange", hex: "#F97316" },
-  { id: "brown", name: "Brown", hex: "#78350F" },
+  { id: "blush", name: "Blush", hex: "#FDC6BF" },
+  { id: "silver-gray", name: "Silver Gray", hex: "#C1C2C4" },
+  { id: "cream", name: "Cream", hex: "#E8E2CC" },
+  { id: "slate-blue", name: "Slate Blue", hex: "#4B526C" },
 ];
 
 // =============================================================================

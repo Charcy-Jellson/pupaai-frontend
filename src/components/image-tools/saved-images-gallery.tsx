@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { 
   getUserFiles, 
   getAllUserFolders,
@@ -43,6 +44,7 @@ interface SavedImagesGalleryProps {
 }
 
 export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps) {
+  const pathname = usePathname();
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [folders, setFolders] = useState<FolderRecord[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -58,6 +60,13 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   
   const { toast } = useToast();
+
+  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  useEffect(() => {
+    setDeleteDialogOpen(false);
+    setFileToDelete(null);
+    setShowNewFolder(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (userId) {

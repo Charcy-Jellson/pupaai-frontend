@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function ResultsGallery({
 }: ResultsGalleryProps) {
   const { user } = useUser();
   const { toast } = useToast();
+  const pathname = usePathname();
 
   const [previewResult, setPreviewResult] = useState<MockupResult | null>(null);
 
@@ -76,6 +78,15 @@ export function ResultsGallery({
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
+  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  useEffect(() => {
+    setPreviewResult(null);
+    setSaveDialogOpen(false);
+    setResultToSave(null);
+    setSavingAll(false);
+    setShowNewFolder(false);
+  }, [pathname]);
 
   const successCount = results.filter((r) => r.status === "fulfilled").length;
   const errorCount = results.filter((r) => r.status === "rejected").length;
