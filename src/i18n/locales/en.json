@@ -521,20 +521,43 @@
   "admin": {
     "users": {
       "title": "User Management",
-      "subtitle": "Manage user accounts and roles",
-      "email": "Email",
+      "subtitle": "Manage user accounts, roles, and subscription tiers",
+      "userId": "User ID",
       "role": "Role",
+      "tier": "Tier",
       "createdAt": "Created At",
       "actions": "Actions",
       "roles": {
         "admin": "Admin",
         "user": "User"
       },
+      "tiers": {
+        "free": "Free",
+        "plus": "Plus",
+        "pro": "Pro",
+        "premium": "Premium",
+        "business": "Business"
+      },
       "addUser": "Add User",
-      "deleteUser": "Delete User",
+      "removeUser": "Remove User",
       "searchUsers": "Search users...",
       "noUsersFound": "No users found",
-      "confirmDelete": "Are you sure you want to delete this user?"
+      "confirmDelete": "Are you sure you want to delete this user?",
+      "changeRole": "Change Role",
+      "changeTier": "Change Tier",
+      "userAdded": "User Added",
+      "userAddedDesc": "User has been added with {role} role and {tier} tier.",
+      "addUserFailed": "Failed to add user. Please try again.",
+      "roleUpdated": "Role Updated",
+      "roleUpdatedDesc": "User role has been updated to {role}.",
+      "updateRoleFailed": "Failed to update role. Please try again.",
+      "tierUpdated": "Tier Updated",
+      "tierUpdatedDesc": "User tier has been updated to {tier}.",
+      "updateTierFailed": "Failed to update tier. Please try again.",
+      "clerkUserId": "Clerk User ID",
+      "clerkUserIdHint": "You can find this in the Clerk Dashboard",
+      "totalUsers": "Total Users",
+      "admins": "Admins"
     },
     "settings": {
       "title": "Settings",

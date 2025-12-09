@@ -11,12 +11,29 @@ export const STORAGE_BUCKET = "pupa-ai-media";
 // ==================== Types ====================
 
 export type UserRole = "admin" | "user";
+export type UserTier = "free" | "plus" | "pro" | "premium" | "business";
+
+// Tier levels for comparison (higher = more access)
+export const TIER_LEVELS: Record<UserTier, number> = {
+  free: 0,
+  plus: 1,
+  pro: 2,
+  premium: 3,
+  business: 4,
+};
+
+// Check if user has access to a feature requiring a certain tier
+export function hasTierAccess(userTier: UserTier, requiredTier: UserTier): boolean {
+  return TIER_LEVELS[userTier] >= TIER_LEVELS[requiredTier];
+}
 
 export interface UserRoleRecord {
   id: string;
   user_id: string;
   role: UserRole;
+  tier: UserTier;
   created_at: string;
+  updated_at: string;
 }
 
 export interface FolderRecord {
@@ -57,16 +74,40 @@ export async function getUserRole(userId: string): Promise<UserRole> {
   return data.role as UserRole;
 }
 
-export async function setUserRole(userId: string, role: UserRole): Promise<boolean> {
+export async function setUserRole(userId: string, role: UserRole, tier?: UserTier): Promise<boolean> {
+  const updateData: { user_id: string; role: UserRole; tier?: UserTier } = {
+    user_id: userId,
+    role: role,
+  };
+  
+  if (tier) {
+    updateData.tier = tier;
+  }
+
   const { error } = await supabase.from("user_roles").upsert(
-    {
-      user_id: userId,
-      role: role,
-    },
+    updateData,
     {
       onConflict: "user_id",
     }
   );
+
+  return !error;
+}
+
+export async function updateUserTier(userId: string, tier: UserTier): Promise<boolean> {
+  const { error } = await supabase
+    .from("user_roles")
+    .update({ tier })
+    .eq("user_id", userId);
+
+  return !error;
+}
+
+export async function updateUserRoleOnly(userId: string, role: UserRole): Promise<boolean> {
+  const { error } = await supabase
+    .from("user_roles")
+    .update({ role })
+    .eq("user_id", userId);
 
   return !error;
 }

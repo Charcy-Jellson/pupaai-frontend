@@ -521,20 +521,43 @@
   "admin": {
     "users": {
       "title": "用户管理",
-      "subtitle": "管理用户帐户和角色",
-      "email": "邮箱",
+      "subtitle": "管理用户账户、角色和订阅等级",
+      "userId": "用户 ID",
       "role": "角色",
+      "tier": "等级",
       "createdAt": "创建时间",
       "actions": "操作",
       "roles": {
         "admin": "管理员",
         "user": "用户"
       },
+      "tiers": {
+        "free": "免费版",
+        "plus": "Plus",
+        "pro": "Pro",
+        "premium": "Premium",
+        "business": "企业版"
+      },
       "addUser": "添加用户",
-      "deleteUser": "删除用户",
+      "removeUser": "移除用户",
       "searchUsers": "搜索用户...",
       "noUsersFound": "未找到用户",
-      "confirmDelete": "确定要删除此用户吗？"
+      "confirmDelete": "确定要删除此用户吗？",
+      "changeRole": "更改角色",
+      "changeTier": "更改等级",
+      "userAdded": "用户已添加",
+      "userAddedDesc": "用户已添加，角色为 {role}，等级为 {tier}。",
+      "addUserFailed": "添加用户失败，请重试。",
+      "roleUpdated": "角色已更新",
+      "roleUpdatedDesc": "用户角色已更新为 {role}。",
+      "updateRoleFailed": "更新角色失败，请重试。",
+      "tierUpdated": "等级已更新",
+      "tierUpdatedDesc": "用户等级已更新为 {tier}。",
+      "updateTierFailed": "更新等级失败，请重试。",
+      "clerkUserId": "Clerk 用户 ID",
+      "clerkUserIdHint": "您可以在 Clerk 控制台中找到此 ID",
+      "totalUsers": "总用户数",
+      "admins": "管理员"
     },
     "settings": {
       "title": "设置",
