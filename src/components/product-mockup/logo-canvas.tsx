@@ -43,6 +43,7 @@ export function LogoCanvas({
   generatedMockup,
   isProcessing,
 }: LogoCanvasProps) {
+  const t = useTranslations("productMockup.canvas");
   const containerRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -171,7 +172,7 @@ export function LogoCanvas({
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
                   <Maximize2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Select a template or upload a product image</p>
+                  <p className="text-sm">{t("selectTemplateOrUpload")}</p>
                 </div>
               </div>
             )}
@@ -225,7 +226,7 @@ export function LogoCanvas({
                     transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
                     className="w-12 h-12 border-4 border-violet-500 border-t-transparent rounded-full mx-auto mb-3"
                   />
-                  <p className="text-sm text-white">Generating mockup...</p>
+                  <p className="text-sm text-white">{t("generatingMockup")}</p>
                 </div>
               </div>
             )}
@@ -235,7 +236,7 @@ export function LogoCanvas({
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-center text-white/80">
                   <Upload className="w-8 h-8 mx-auto mb-2" />
-                  <p className="text-sm">Upload a logo to continue</p>
+                  <p className="text-sm">{t("uploadLogoToContinue")}</p>
                 </div>
               </div>
             )}
@@ -264,8 +265,8 @@ export function LogoCanvas({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Logo uploaded</p>
-                <p className="text-xs text-muted-foreground">Drag to position</p>
+                <p className="text-sm font-medium truncate">{t("logoUploaded")}</p>
+                <p className="text-xs text-muted-foreground">{t("dragToPosition")}</p>
               </div>
               <Button
                 variant="outline"
@@ -273,7 +274,7 @@ export function LogoCanvas({
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isProcessing}
               >
-                Change
+                {t("change")}
               </Button>
             </div>
           ) : (
@@ -285,7 +286,7 @@ export function LogoCanvas({
             >
               <div className="flex flex-col items-center gap-1">
                 <Upload className="w-4 h-4" />
-                <span className="text-xs">Upload Logo</span>
+                <span className="text-xs">{t("uploadLogo")}</span>
               </div>
             </Button>
           )}
@@ -301,7 +302,7 @@ export function LogoCanvas({
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   <ZoomIn className="w-3 h-3" />
-                  Scale
+                  {t("scale")}
                 </Label>
                 <span className="text-xs text-muted-foreground">
                   {Math.round(logoPosition.scale * 100)}%
@@ -343,7 +344,7 @@ export function LogoCanvas({
               <div className="flex items-center justify-between">
                 <Label className="text-xs text-muted-foreground flex items-center gap-1">
                   <RotateCw className="w-3 h-3" />
-                  Rotation
+                  {t("rotation")}
                 </Label>
                 <span className="text-xs text-muted-foreground">
                   {Math.round(logoPosition.rotation)}°
@@ -389,7 +390,7 @@ export function LogoCanvas({
               disabled={isProcessing}
             >
               <RefreshCw className="w-3 h-3 mr-2" />
-              Reset Position
+              {t("resetPosition")}
             </Button>
           </CardContent>
         </Card>
@@ -397,8 +398,3 @@ export function LogoCanvas({
     </div>
   );
 }
-
-
-
-
-

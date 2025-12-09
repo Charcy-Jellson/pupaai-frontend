@@ -35,11 +35,13 @@ export function ModelGenerator({
   isGenerating,
   disabled = false,
 }: ModelGeneratorProps) {
+  const t = useTranslations("modelStudio.modelGenerator");
+
   return (
     <div className="space-y-4">
       {/* Ethnicity */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Ethnicity</Label>
+        <Label className="text-xs text-muted-foreground">{t("ethnicity")}</Label>
         <Select
           value={options.ethnicity}
           onValueChange={(v) => onOptionsChange({ ethnicity: v as ModelGenerationOptions["ethnicity"] })}
@@ -60,7 +62,7 @@ export function ModelGenerator({
 
       {/* Gender */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Gender</Label>
+        <Label className="text-xs text-muted-foreground">{t("gender")}</Label>
         <Select
           value={options.gender}
           onValueChange={(v) => onOptionsChange({ gender: v as ModelGenerationOptions["gender"] })}
@@ -81,7 +83,7 @@ export function ModelGenerator({
 
       {/* Hair Length */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Hair</Label>
+        <Label className="text-xs text-muted-foreground">{t("hair")}</Label>
         <Select
           value={options.hairLength}
           onValueChange={(v) => onOptionsChange({ hairLength: v as ModelGenerationOptions["hairLength"] })}
@@ -102,7 +104,7 @@ export function ModelGenerator({
 
       {/* Age Group */}
       <div className="space-y-2">
-        <Label className="text-xs text-muted-foreground">Age</Label>
+        <Label className="text-xs text-muted-foreground">{t("age")}</Label>
         <Select
           value={options.ageGroup}
           onValueChange={(v) => onOptionsChange({ ageGroup: v as ModelGenerationOptions["ageGroup"] })}
@@ -123,7 +125,7 @@ export function ModelGenerator({
 
       {/* Glasses Toggle */}
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-muted-foreground">Glasses</Label>
+        <Label className="text-xs text-muted-foreground">{t("glasses")}</Label>
         <Switch
           checked={options.glasses}
           onCheckedChange={(v) => onOptionsChange({ glasses: v })}
@@ -140,24 +142,19 @@ export function ModelGenerator({
         {isGenerating ? (
           <>
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            Generating...
+            {t("generating")}
           </>
         ) : (
           <>
             <Sparkles className="w-4 h-4 mr-2" />
-            Generate Model
+            {t("generateModel")}
           </>
         )}
       </Button>
 
       <p className="text-xs text-muted-foreground text-center">
-        AI will generate a fashion model in white underwear
+        {t("aiGenerateDescription")}
       </p>
     </div>
   );
 }
-
-
-
-
-

@@ -18,12 +18,14 @@ export function ColorPalette({
   onToggleColor,
   disabled = false,
 }: ColorPaletteProps) {
+  const t = useTranslations("logoStudio.colorPalette");
+
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Pipette className="w-4 h-4 text-cyan-400" />
-          Colors (Optional)
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -63,11 +65,10 @@ export function ColorPalette({
         </div>
         {selectedColors.length > 0 && (
           <p className="text-xs text-muted-foreground mt-2">
-            {selectedColors.length} color(s) selected
+            {t("colorsSelected", { count: selectedColors.length })}
           </p>
         )}
       </CardContent>
     </Card>
   );
 }
-

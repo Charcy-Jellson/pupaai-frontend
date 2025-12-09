@@ -70,7 +70,7 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
             disabled={isProcessing}
           >
             <CropIcon className="w-4 h-4 mr-2" />
-            {isCropping ? "Cropping..." : "Crop"}
+            {isCropping ? t("cropping") : t("tools.crop")}
           </Button>
         </div>
 
@@ -90,11 +90,11 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" onClick={handleCancelCrop}>
               <X className="w-4 h-4 mr-1" />
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button variant="default" size="sm" onClick={handleCropComplete}>
               <Check className="w-4 h-4 mr-1" />
-              Apply Crop
+              {t("applyCrop")}
             </Button>
           </div>
         )}
@@ -146,7 +146,7 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
             className="absolute inset-0 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm"
           >
             <LoadingSpinner size="lg" />
-            <p className="mt-4 text-sm text-muted-foreground">Processing image...</p>
+            <p className="mt-4 text-sm text-muted-foreground">{t("processingImage")}</p>
           </motion.div>
         )}
       </div>
@@ -154,12 +154,9 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
       {/* Crop Instructions */}
       {isCropping && !completedCrop && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 rounded-lg bg-violet-500/90 text-white text-sm">
-          Click and drag to select crop area
+          {t("cropInstructions")}
         </div>
       )}
     </Card>
   );
 }
-
-
-

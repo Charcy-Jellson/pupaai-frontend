@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import {
   Upload,
   ImageIcon,
@@ -46,6 +47,8 @@ export function ClothingPicker({
   onClearAll,
   disabled = false,
 }: ClothingPickerProps) {
+  const t = useTranslations("modelStudio.clothingPicker");
+  const tc = useTranslations("common");
   const { user } = useUser();
   const { toast } = useToast();
   
@@ -80,14 +83,14 @@ export function ClothingPicker({
       setFiles(filesData.filter((f) => f.mime_type?.startsWith("image/")));
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to load gallery",
+        title: tc("error"),
+        description: t("failedToLoadGallery"),
         variant: "destructive",
       });
     } finally {
       setIsLoadingGallery(false);
     }
-  }, [user?.id, currentFolderId, toast]);
+  }, [user?.id, currentFolderId, toast, t, tc]);
 
   useEffect(() => {
     if (activeTab === "gallery") {
@@ -119,8 +122,8 @@ export function ClothingPicker({
     // Check if already selected
     if (selectedItems.some((item) => item.id === file.id)) {
       toast({
-        title: "Already selected",
-        description: "This item is already in your selection",
+        title: t("alreadySelected"),
+        description: t("alreadySelectedDesc"),
       });
       return;
     }
@@ -143,13 +146,13 @@ export function ClothingPicker({
         reader.readAsDataURL(blob);
       } catch {
         toast({
-          title: "Error",
-          description: "Failed to load image",
+          title: tc("error"),
+          description: t("failedToLoadImage"),
           variant: "destructive",
         });
       }
     }
-  }, [onAddItem, selectedItems, toast]);
+  }, [onAddItem, selectedItems, toast, t, tc]);
 
   // Create new folder
   const handleCreateFolder = useCallback(async () => {
@@ -163,18 +166,18 @@ export function ClothingPicker({
       setNewFolderName("");
       setShowNewFolder(false);
       toast({
-        title: "Folder created",
-        description: `"${folder.name}" has been created`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
     setIsCreatingFolder(false);
-  }, [newFolderName, user?.id, currentFolderId, toast]);
+  }, [newFolderName, user?.id, currentFolderId, toast, t, tc]);
 
   // Navigate to folder
   const navigateToFolder = useCallback((folderId: string | null) => {
@@ -209,10 +212,10 @@ export function ClothingPicker({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Shirt className="w-4 h-4 text-blue-400" />
-            Select Clothing
+            {t("selectClothing")}
             {selectedItems.length > 0 && (
               <Badge variant="secondary" className="ml-2">
-                {selectedItems.length} selected
+                {t("selectedCount", { count: selectedItems.length })}
               </Badge>
             )}
           </CardTitle>
@@ -223,7 +226,7 @@ export function ClothingPicker({
               onClick={onClearAll}
               disabled={disabled}
             >
-              Clear All
+              {t("clearAll")}
             </Button>
           )}
         </div>
@@ -233,7 +236,7 @@ export function ClothingPicker({
         {selectedItems.length > 0 && (
           <div className="mb-4">
             <Label className="text-xs text-muted-foreground mb-2 block">
-              Selected Items
+              {t("selectedItems")}
             </Label>
             <div className="flex flex-wrap gap-2">
               {selectedItems.map((item) => (
@@ -263,11 +266,11 @@ export function ClothingPicker({
           <TabsList className="grid w-full grid-cols-2 mb-4">
             <TabsTrigger value="upload" className="text-xs">
               <Upload className="w-3 h-3 mr-1" />
-              Upload
+              {t("upload")}
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs">
               <ImageIcon className="w-3 h-3 mr-1" />
-              Gallery
+              {t("gallery")}
             </TabsTrigger>
           </TabsList>
 
@@ -282,10 +285,10 @@ export function ClothingPicker({
             >
               <Upload className="w-6 h-6 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
-                Click to add clothing
+                {t("clickToAddClothing")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                Multiple items supported
+                {t("multipleItemsSupported")}
               </p>
               <input
                 type="file"
@@ -333,12 +336,12 @@ export function ClothingPicker({
                 onClick={() => setShowNewFolder(true)}
               >
                 <Plus className="w-3 h-3 mr-1" />
-                New Folder
+                {t("newFolder")}
               </Button>
             ) : (
               <div className="flex gap-2 mb-3">
                 <Input
-                  placeholder="Folder name"
+                  placeholder={t("folderName")}
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   className="h-8 text-sm"
@@ -350,7 +353,7 @@ export function ClothingPicker({
                   onClick={handleCreateFolder}
                   disabled={isCreatingFolder || !newFolderName.trim()}
                 >
-                  Create
+                  {tc("create")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -361,7 +364,7 @@ export function ClothingPicker({
                     setNewFolderName("");
                   }}
                 >
-                  Cancel
+                  {tc("cancel")}
                 </Button>
               </div>
             )}
@@ -378,7 +381,7 @@ export function ClothingPicker({
                 }}
               >
                 <ArrowLeft className="w-3 h-3 mr-1" />
-                Back
+                {tc("back")}
               </Button>
             )}
 
@@ -386,7 +389,7 @@ export function ClothingPicker({
             <div className="space-y-2 max-h-[200px] overflow-y-auto">
               {isLoadingGallery ? (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  Loading...
+                  {tc("loading")}
                 </div>
               ) : (
                 <>
@@ -425,7 +428,7 @@ export function ClothingPicker({
                           {isSelected && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                               <Badge variant="secondary" className="text-xs">
-                                Selected
+                                {t("selected")}
                               </Badge>
                             </div>
                           )}
@@ -436,7 +439,7 @@ export function ClothingPicker({
 
                   {folders.length === 0 && files.length === 0 && (
                     <div className="text-center text-sm text-muted-foreground py-4">
-                      No files found
+                      {t("noFilesFound")}
                     </div>
                   )}
                 </>
@@ -448,17 +451,3 @@ export function ClothingPicker({
     </Card>
   );
 }
-
-// Add Label component since it's used
-function Label({ className, children, ...props }: React.HTMLAttributes<HTMLLabelElement>) {
-  return (
-    <label className={cn("text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70", className)} {...props}>
-      {children}
-    </label>
-  );
-}
-
-
-
-
-

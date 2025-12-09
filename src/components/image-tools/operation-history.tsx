@@ -33,25 +33,26 @@ const operationIcons: Record<ImageOperation["type"], React.ComponentType<{ class
   "remove-logo": Wand2,
 };
 
-const operationLabels: Record<ImageOperation["type"], string> = {
-  crop: "Crop",
-  resize: "Resize",
-  rotate: "Rotate",
-  compress: "Compress",
-  "extract-logo": "Extract Logo",
-  "remove-background": "Remove BG",
-  "remove-logo": "Remove Logo",
-};
-
 export function OperationHistory({ operations, onUndo }: OperationHistoryProps) {
   const t = useTranslations("imageTools");
+
+  const operationLabels: Record<ImageOperation["type"], string> = {
+    crop: t("tools.crop"),
+    resize: t("resize"),
+    rotate: t("tools.rotate"),
+    compress: t("compress"),
+    "extract-logo": t("tools.extractLogo"),
+    "remove-background": t("tools.removeBackgroundShort"),
+    "remove-logo": t("tools.removeLogoShort"),
+  };
+
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <History className="w-4 h-4 text-violet-400" />
-            Operation History
+            {t("operationHistory")}
           </CardTitle>
           <Button
             variant="ghost"
@@ -61,7 +62,7 @@ export function OperationHistory({ operations, onUndo }: OperationHistoryProps) 
             className="text-muted-foreground hover:text-white"
           >
             <Undo2 className="w-4 h-4 mr-1" />
-            Undo
+            {t("undo")}
           </Button>
         </div>
       </CardHeader>
@@ -98,14 +99,10 @@ export function OperationHistory({ operations, onUndo }: OperationHistoryProps) 
         
         {operations.length === 0 && (
           <div className="text-center py-4 text-sm text-muted-foreground">
-            No operations yet
+            {t("noOperationsYet")}
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
-
-
-
-

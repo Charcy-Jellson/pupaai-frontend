@@ -150,7 +150,7 @@ export function ToolPanel({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <RotateCw className="w-4 h-4 text-violet-400" />
-              <CardTitle className="text-base">Transform</CardTitle>
+              <CardTitle className="text-base">{t("transform")}</CardTitle>
             </div>
             {expandedSections.transform ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -164,7 +164,7 @@ export function ToolPanel({
           <CardContent className="space-y-4">
             {/* Quick Rotate Buttons */}
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Quick Rotate</Label>
+              <Label className="text-sm text-muted-foreground">{t("quickRotate")}</Label>
               <div className="grid grid-cols-4 gap-2">
                 <Button
                   variant="outline"
@@ -174,7 +174,7 @@ export function ToolPanel({
                   className="flex flex-col items-center gap-1 h-auto py-2"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span className="text-xs">90° L</span>
+                  <span className="text-xs">{t("rotate90L")}</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -184,7 +184,7 @@ export function ToolPanel({
                   className="flex flex-col items-center gap-1 h-auto py-2"
                 >
                   <RotateCw className="w-4 h-4" />
-                  <span className="text-xs">90° R</span>
+                  <span className="text-xs">{t("rotate90R")}</span>
                 </Button>
                 <Button
                   variant="outline"
@@ -204,7 +204,7 @@ export function ToolPanel({
                   className="flex flex-col items-center gap-1 h-auto py-2"
                 >
                   <RotateCcw className="w-4 h-4" />
-                  <span className="text-xs">Flip</span>
+                  <span className="text-xs">{t("flip")}</span>
                 </Button>
               </div>
             </div>
@@ -214,7 +214,7 @@ export function ToolPanel({
             {/* Custom Rotation with Live Preview */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <Label className="text-sm text-muted-foreground">Custom Rotation</Label>
+                <Label className="text-sm text-muted-foreground">{t("customRotation")}</Label>
                 <span className="text-sm font-medium">{rotationAngle}°</span>
               </div>
               <Slider
@@ -240,7 +240,7 @@ export function ToolPanel({
                   }}
                   disabled={!hasImage || isProcessing || !isPreviewingRotation}
                 >
-                  Cancel
+                  {tc("cancel")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -252,7 +252,7 @@ export function ToolPanel({
                   }}
                   disabled={!hasImage || isProcessing || rotationAngle === 0}
                 >
-                  Apply
+                  {t("apply")}
                 </Button>
               </div>
             </div>
@@ -269,7 +269,7 @@ export function ToolPanel({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Maximize2 className="w-4 h-4 text-violet-400" />
-              <CardTitle className="text-base">Resize</CardTitle>
+              <CardTitle className="text-base">{t("resize")}</CardTitle>
             </div>
             {expandedSections.resize ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -284,7 +284,7 @@ export function ToolPanel({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="width" className="text-sm text-muted-foreground">
-                  Width (px)
+                  {t("widthPx")}
                 </Label>
                 <Input
                   id="width"
@@ -297,7 +297,7 @@ export function ToolPanel({
               </div>
               <div className="space-y-2">
                 <Label htmlFor="height" className="text-sm text-muted-foreground">
-                  Height (px)
+                  {t("heightPx")}
                 </Label>
                 <Input
                   id="height"
@@ -312,15 +312,15 @@ export function ToolPanel({
 
             {/* Preset Sizes */}
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Presets</Label>
+              <Label className="text-sm text-muted-foreground">{t("presetsLabel")}</Label>
               <div className="grid grid-cols-3 gap-2">
                 {[
                   { label: "HD", w: 1280, h: 720 },
                   { label: "FHD", w: 1920, h: 1080 },
                   { label: "4K", w: 3840, h: 2160 },
-                  { label: "Square", w: 1080, h: 1080 },
-                  { label: "Story", w: 1080, h: 1920 },
-                  { label: "Banner", w: 1200, h: 628 },
+                  { label: t("presets.square"), w: 1080, h: 1080 },
+                  { label: t("presets.story"), w: 1080, h: 1920 },
+                  { label: t("presets.banner"), w: 1200, h: 628 },
                 ].map((preset) => (
                   <Button
                     key={preset.label}
@@ -346,7 +346,7 @@ export function ToolPanel({
               onClick={handleResize}
               disabled={!hasImage || isProcessing || !resizeWidth || !resizeHeight}
             >
-              Apply Resize
+              {t("applyResize")}
             </Button>
           </CardContent>
         )}
@@ -361,7 +361,7 @@ export function ToolPanel({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FileDown className="w-4 h-4 text-violet-400" />
-              <CardTitle className="text-base">Compress</CardTitle>
+              <CardTitle className="text-base">{t("compress")}</CardTitle>
             </div>
             {expandedSections.compress ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -370,7 +370,7 @@ export function ToolPanel({
             )}
           </div>
           <CardDescription className="text-xs">
-            Reduce file size
+            {t("reduceFileSize")}
           </CardDescription>
         </CardHeader>
         
@@ -378,7 +378,7 @@ export function ToolPanel({
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="targetSize" className="text-sm text-muted-foreground">
-                Target Size (KB)
+                {t("targetSizeKB")}
               </Label>
               <Input
                 id="targetSize"
@@ -395,7 +395,7 @@ export function ToolPanel({
 
             {/* Preset Sizes */}
             <div className="space-y-2">
-              <Label className="text-sm text-muted-foreground">Presets</Label>
+              <Label className="text-sm text-muted-foreground">{t("presetsLabel")}</Label>
               <div className="grid grid-cols-4 gap-2">
                 {[
                   { label: "100KB", size: 100 },
@@ -433,26 +433,26 @@ export function ToolPanel({
               }}
               disabled={!hasImage || isProcessing || !targetSizeKB}
             >
-              Compress Image
+              {t("compressImage")}
             </Button>
 
             {/* Compression Result */}
             {compressionResult && (
               <div className="rounded-lg bg-muted/50 p-3 space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Original:</span>
+                  <span className="text-muted-foreground">{t("original")}:</span>
                   <span className="font-medium">{compressionResult.originalSize} KB</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Compressed:</span>
+                  <span className="text-muted-foreground">{t("compressed")}:</span>
                   <span className="font-medium text-green-500">{compressionResult.finalSize} KB</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Quality:</span>
+                  <span className="text-muted-foreground">{t("quality")}:</span>
                   <span className="font-medium">{compressionResult.quality}%</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Reduction:</span>
+                  <span className="text-muted-foreground">{t("reduction")}:</span>
                   <span className="font-medium text-violet-400">
                     {Math.round((1 - compressionResult.finalSize / compressionResult.originalSize) * 100)}%
                   </span>
@@ -472,7 +472,7 @@ export function ToolPanel({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Wand2 className="w-4 h-4 text-violet-400" />
-              <CardTitle className="text-base">AI Tools</CardTitle>
+              <CardTitle className="text-base">{t("aiTools")}</CardTitle>
             </div>
             {expandedSections.ai ? (
               <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -481,7 +481,7 @@ export function ToolPanel({
             )}
           </div>
           <CardDescription className="text-xs">
-            Powered by AI
+            {t("poweredByAI")}
           </CardDescription>
         </CardHeader>
         
@@ -492,8 +492,8 @@ export function ToolPanel({
               <div className="p-3 rounded-lg bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 space-y-2">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-violet-400" />
-                  <Label className="text-sm font-medium">Model Override</Label>
-                  <Badge variant="secondary" className="text-[10px]">Admin</Badge>
+                  <Label className="text-sm font-medium">{t("modelOverride")}</Label>
+                  <Badge variant="secondary" className="text-[10px]">{t("admin")}</Badge>
                 </div>
                 {isLoadingModels ? (
                   <div className="flex items-center justify-center py-2">
@@ -505,10 +505,10 @@ export function ToolPanel({
                     onValueChange={(value) => setSelectedModelId(value)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Use default" />
+                      <SelectValue placeholder={t("useDefault")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="default">Use Default</SelectItem>
+                      <SelectItem value="default">{t("useDefault")}</SelectItem>
                       
                       {geminiModels.length > 0 && (
                         <SelectGroup>
@@ -534,14 +534,14 @@ export function ToolPanel({
 
                       {geminiModels.length === 0 && openaiModels.length === 0 && (
                         <SelectItem value="none" disabled>
-                          No models available
+                          {t("noModelsAvailable")}
                         </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
                 )}
                 <p className="text-[10px] text-muted-foreground">
-                  Override the default model for this request
+                  {t("overrideDefaultModel")}
                 </p>
               </div>
             )}
@@ -559,9 +559,9 @@ export function ToolPanel({
                 <Eraser className="w-4 h-4 text-violet-400" />
               </div>
               <div className="text-left flex-1">
-                <div className="font-medium">Remove Background</div>
+                <div className="font-medium">{t("tools.removeBackground")}</div>
                 <div className="text-xs text-muted-foreground">
-                  Make background transparent
+                  {t("makeBackgroundTransparent")}
                 </div>
               </div>
             </Button>
@@ -579,9 +579,9 @@ export function ToolPanel({
                 <Scissors className="w-4 h-4 text-violet-400" />
               </div>
               <div className="text-left flex-1">
-                <div className="font-medium">Extract Logo</div>
+                <div className="font-medium">{t("tools.extractLogo")}</div>
                 <div className="text-xs text-muted-foreground">
-                  Isolate logo from image
+                  {t("isolateLogoFromImage")}
                 </div>
               </div>
             </Button>
@@ -599,9 +599,9 @@ export function ToolPanel({
                 <Wand2 className="w-4 h-4 text-violet-400" />
               </div>
               <div className="text-left flex-1">
-                <div className="font-medium">Remove Logo</div>
+                <div className="font-medium">{t("tools.removeLogo")}</div>
                 <div className="text-xs text-muted-foreground">
-                  Remove logos and watermarks
+                  {t("removeLogosAndWatermarks")}
                 </div>
               </div>
             </Button>

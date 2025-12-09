@@ -64,6 +64,8 @@ export function ImagePicker({
   disabled = false,
   allowSaveToGallery = false,
 }: ImagePickerProps) {
+  const t = useTranslations("productMockup.imagePicker");
+  const tc = useTranslations("common");
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -166,13 +168,13 @@ export function ImagePicker({
       setNewFolderName("");
       setShowNewFolder(false);
       toast({
-        title: "Folder Created",
-        description: `"${folder.name}" has been created.`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder.",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
@@ -235,13 +237,13 @@ export function ImagePicker({
       setSaveNewFolderName("");
       setShowSaveNewFolder(false);
       toast({
-        title: "Folder Created",
-        description: `"${folder.name}" has been created.`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder.",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
@@ -267,22 +269,22 @@ export function ImagePicker({
 
       if (saved) {
         toast({
-          title: "Saved to Gallery",
-          description: `Image saved as "${filename}"`,
+          title: t("savedToGallery"),
+          description: t("savedToGalleryDesc", { name: filename }),
         });
         setSaveDialogOpen(false);
       } else {
         toast({
-          title: "Error",
-          description: "Failed to save image.",
+          title: tc("error"),
+          description: t("failedToSave"),
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error saving image:", error);
       toast({
-        title: "Error",
-        description: "Failed to save image.",
+        title: tc("error"),
+        description: t("failedToSave"),
         variant: "destructive",
       });
     } finally {
@@ -342,7 +344,7 @@ export function ImagePicker({
             </Button>
             <div className="absolute bottom-2 left-2 px-2 py-1 rounded bg-green-500/90 text-white text-xs flex items-center gap-1">
               <Check className="w-3 h-3" />
-              Selected
+              {t("selected")}
             </div>
           </div>
         )}
@@ -353,11 +355,11 @@ export function ImagePicker({
             <TabsList className="grid w-full grid-cols-2 mb-3">
               <TabsTrigger value="upload" className="text-xs">
                 <Upload className="w-3.5 h-3.5 mr-1.5" />
-                Upload
+                {t("upload")}
               </TabsTrigger>
               <TabsTrigger value="gallery" className="text-xs">
                 <FolderOpen className="w-3.5 h-3.5 mr-1.5" />
-                Gallery
+                {t("gallery")}
               </TabsTrigger>
             </TabsList>
 
@@ -379,7 +381,7 @@ export function ImagePicker({
                 <div className="flex flex-col items-center gap-2">
                   <Upload className="w-6 h-6 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">
-                    Click to upload or drag & drop
+                    {t("clickToUpload")}
                   </span>
                 </div>
               </Button>
@@ -429,7 +431,7 @@ export function ImagePicker({
                     disabled={disabled}
                   >
                     <ArrowLeft className="w-3 h-3 mr-1" />
-                    Back
+                    {tc("back")}
                   </Button>
                 )}
 
@@ -443,7 +445,7 @@ export function ImagePicker({
                     disabled={disabled}
                   >
                     <Plus className="w-3 h-3 mr-1" />
-                    New
+                    {t("new")}
                   </Button>
                 )}
               </div>
@@ -454,7 +456,7 @@ export function ImagePicker({
                   <Input
                     value={newFolderName}
                     onChange={(e) => setNewFolderName(e.target.value)}
-                    placeholder="Folder name"
+                    placeholder={t("folderName")}
                     className="h-7 text-xs flex-1"
                     onKeyDown={(e) => {
                       if (e.key === "Enter") handleCreateFolder();
@@ -498,7 +500,7 @@ export function ImagePicker({
                 <div className="flex flex-col items-center justify-center h-40 text-center">
                   <FolderOpen className="w-8 h-8 text-muted-foreground mb-2" />
                   <p className="text-xs text-muted-foreground">
-                    {currentFolderId ? "Empty folder" : "No saved images"}
+                    {currentFolderId ? t("emptyFolder") : t("noSavedImages")}
                   </p>
                 </div>
               ) : (
@@ -573,7 +575,7 @@ export function ImagePicker({
               }}
               disabled={disabled}
             >
-              Change Image
+              {t("changeImage")}
             </Button>
             {allowSaveToGallery && (
               <Button
@@ -584,7 +586,7 @@ export function ImagePicker({
                 className="gap-1"
               >
                 <Save className="w-3.5 h-3.5" />
-                Save
+                {tc("save")}
               </Button>
             )}
           </div>
@@ -597,7 +599,7 @@ export function ImagePicker({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Save className="w-5 h-5 text-violet-400" />
-              Save to Gallery
+              {t("saveToGalleryTitle")}
             </DialogTitle>
           </DialogHeader>
 
@@ -648,7 +650,7 @@ export function ImagePicker({
                   className="h-7 px-2"
                 >
                   <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                  Back
+                  {tc("back")}
                 </Button>
               )}
             </div>
@@ -662,7 +664,7 @@ export function ImagePicker({
                 className="gap-1"
               >
                 <Plus className="w-3.5 h-3.5" />
-                New Folder
+                {t("newFolder")}
               </Button>
             )}
 
@@ -672,7 +674,7 @@ export function ImagePicker({
                 <Input
                   value={saveNewFolderName}
                   onChange={(e) => setSaveNewFolderName(e.target.value)}
-                  placeholder="Folder name"
+                  placeholder={t("folderName")}
                   className="flex-1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleCreateSaveFolder();
@@ -689,7 +691,7 @@ export function ImagePicker({
                   onClick={handleCreateSaveFolder}
                   disabled={!saveNewFolderName.trim() || isCreatingFolder}
                 >
-                  {isCreatingFolder ? "..." : "Create"}
+                  {isCreatingFolder ? "..." : tc("create")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -711,13 +713,10 @@ export function ImagePicker({
                   <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
                     <FolderOpen className="w-8 h-8 mb-2" />
                     <p className="text-sm">
-                      {saveFolderId ? "Empty folder" : "No folders"}
+                      {saveFolderId ? t("emptyFolder") : t("noFolders")}
                     </p>
                     <p className="text-xs mt-1">
-                      Will save to{" "}
-                      {saveFolderPath.length > 0
-                        ? saveFolderPath[saveFolderPath.length - 1].name
-                        : "root"}
+                      {t("saveToLocation", { location: saveFolderPath.length > 0 ? saveFolderPath[saveFolderPath.length - 1].name : t("root") })}
                     </p>
                   </div>
                 ) : (
@@ -744,10 +743,10 @@ export function ImagePicker({
 
             {/* Current save location */}
             <div className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-3">
-              <span className="font-medium">Save to: </span>
+              <span className="font-medium">{t("saveTo")}: </span>
               {saveFolderPath.length > 0
                 ? saveFolderPath.map((f) => f.name).join(" / ")
-                : "Root folder"}
+                : t("rootFolder")}
             </div>
           </div>
 
@@ -757,18 +756,18 @@ export function ImagePicker({
               onClick={() => setSaveDialogOpen(false)}
               disabled={isSaving}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button onClick={handleSaveToGallery} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />
-                  Saving...
+                  {t("saving")}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Here
+                  {t("saveHere")}
                 </>
               )}
             </Button>
@@ -778,4 +777,3 @@ export function ImagePicker({
     </Card>
   );
 }
-

@@ -37,6 +37,8 @@ export function LogoPreview({
   isEditing,
   disabled = false,
 }: LogoPreviewProps) {
+  const t = useTranslations("logoStudio.preview");
+  const tc = useTranslations("common");
   const [showEditPanel, setShowEditPanel] = useState(false);
 
   return (
@@ -44,7 +46,7 @@ export function LogoPreview({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <ImageIcon className="w-4 h-4 text-emerald-400" />
-          Preview
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -61,8 +63,8 @@ export function LogoPreview({
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-muted/50 text-muted-foreground">
               <ImageIcon className="w-12 h-12 mb-3" />
-              <p className="text-sm">Your logo will appear here</p>
-              <p className="text-xs mt-1">Enter a description to generate</p>
+              <p className="text-sm">{t("logoWillAppearHere")}</p>
+              <p className="text-xs mt-1">{t("enterDescriptionToGenerate")}</p>
             </div>
           )}
         </div>
@@ -79,7 +81,7 @@ export function LogoPreview({
                 className="flex-1"
               >
                 <Download className="w-4 h-4 mr-2" />
-                Download
+                {tc("download")}
               </Button>
               {onSave && (
                 <Button
@@ -90,7 +92,7 @@ export function LogoPreview({
                   className="flex-1"
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save
+                  {tc("save")}
                 </Button>
               )}
             </div>
@@ -106,12 +108,12 @@ export function LogoPreview({
               {showEditPanel ? (
                 <>
                   <X className="w-4 h-4 mr-2" />
-                  Cancel Edit
+                  {t("cancelEdit")}
                 </>
               ) : (
                 <>
                   <Pencil className="w-4 h-4 mr-2" />
-                  Edit Logo
+                  {t("editLogo")}
                 </>
               )}
             </Button>
@@ -125,7 +127,7 @@ export function LogoPreview({
                 className="space-y-3"
               >
                 <Textarea
-                  placeholder="Describe how you want to modify the logo... e.g., 'Make the colors brighter' or 'Add more detail to the edges'"
+                  placeholder={t("editPlaceholder")}
                   value={editInstruction}
                   onChange={(e) => onEditInstructionChange(e.target.value)}
                   className="min-h-[80px] resize-none"
@@ -142,12 +144,12 @@ export function LogoPreview({
                   {isEditing ? (
                     <>
                       <LoadingSpinner size="sm" className="mr-2" />
-                      Editing...
+                      {t("editing")}
                     </>
                   ) : (
                     <>
                       <Wand2 className="w-4 h-4 mr-2" />
-                      Apply Changes
+                      {t("applyChanges")}
                     </>
                   )}
                 </Button>
@@ -159,4 +161,3 @@ export function LogoPreview({
     </Card>
   );
 }
-

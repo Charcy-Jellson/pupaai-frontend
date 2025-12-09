@@ -22,17 +22,19 @@ export function LogoPromptInput({
   isGenerating,
   disabled = false,
 }: LogoPromptInputProps) {
+  const t = useTranslations("logoStudio.promptInput");
+
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-amber-400" />
-          Describe Your Logo
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <Textarea
-          placeholder="Describe the logo you want to create... e.g., 'A minimalist coffee cup logo with steam rising, suitable for a modern café brand'"
+          placeholder={t("placeholder")}
           value={description}
           onChange={(e) => onDescriptionChange(e.target.value)}
           className="min-h-[120px] resize-none"
@@ -47,12 +49,12 @@ export function LogoPromptInput({
           {isGenerating ? (
             <>
               <LoadingSpinner size="sm" className="mr-2" />
-              Generating...
+              {t("generating")}
             </>
           ) : (
             <>
               <Wand2 className="w-4 h-4 mr-2" />
-              Generate Logo
+              {t("generateLogo")}
             </>
           )}
         </Button>
@@ -60,4 +62,3 @@ export function LogoPromptInput({
     </Card>
   );
 }
-

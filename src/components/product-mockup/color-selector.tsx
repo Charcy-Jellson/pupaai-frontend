@@ -31,6 +31,8 @@ export function ColorSelector({
   onColorsChange,
   disabled = false,
 }: ColorSelectorProps) {
+  const t = useTranslations("productMockup.colors");
+  const tc = useTranslations("common");
   const [customColorInput, setCustomColorInput] = useState("#");
   const [customColorName, setCustomColorName] = useState("");
   const [isAddingCustom, setIsAddingCustom] = useState(false);
@@ -89,7 +91,7 @@ export function ColorSelector({
 
     const customColor: ColorOption = {
       id: `custom-${Date.now()}`,
-      name: customColorName || `Custom (${customColorInput})`,
+      name: customColorName || `${t("custom")} (${customColorInput})`,
       hex: customColorInput.toUpperCase(),
     };
 
@@ -101,7 +103,7 @@ export function ColorSelector({
     setCustomColorInput("#");
     setCustomColorName("");
     setIsAddingCustom(false);
-  }, [customColorInput, customColorName, selectedColors, onColorsChange]);
+  }, [customColorInput, customColorName, selectedColors, onColorsChange, t]);
 
   // Save color to user's persistent storage
   const handleSaveColor = useCallback(async () => {
@@ -118,7 +120,7 @@ export function ColorSelector({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: customColorName || `Custom (${customColorInput})`,
+          name: customColorName || `${t("custom")} (${customColorInput})`,
           hex: customColorInput.toUpperCase(),
         }),
       });
@@ -138,7 +140,7 @@ export function ColorSelector({
     } finally {
       setIsSavingColor(false);
     }
-  }, [customColorInput, customColorName]);
+  }, [customColorInput, customColorName, t]);
 
   // Delete saved color
   const handleDeleteSavedColor = useCallback(async (colorId: string) => {
@@ -201,7 +203,7 @@ export function ColorSelector({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <Palette className="w-4 h-4 text-violet-400" />
-            Select Colors
+            {t("selectColors")}
           </CardTitle>
           <div className="flex gap-1">
             <Button
@@ -211,7 +213,7 @@ export function ColorSelector({
               onClick={selectAll}
               disabled={disabled}
             >
-              All
+              {t("all")}
             </Button>
             <Button
               variant="ghost"
@@ -220,7 +222,7 @@ export function ColorSelector({
               onClick={clearAll}
               disabled={disabled || selectedColors.length === 0}
             >
-              Clear
+              {t("clear")}
             </Button>
           </div>
         </div>
@@ -229,7 +231,7 @@ export function ColorSelector({
         {/* Preset Colors Grid */}
         <div>
           <Label className="text-xs text-muted-foreground mb-2 block">
-            Default Colors
+            {t("defaultColors")}
           </Label>
           <div className="grid grid-cols-6 gap-2">
             {PRESET_COLORS.map((color) => {
@@ -283,7 +285,7 @@ export function ColorSelector({
         {(savedColors.length > 0 || isLoadingSavedColors) && (
           <div className="border-t border-border/50 pt-3">
             <Label className="text-xs text-muted-foreground mb-2 block">
-              My Saved Colors
+              {t("mySavedColors")}
             </Label>
             {isLoadingSavedColors ? (
               <div className="flex items-center justify-center py-2">
@@ -347,7 +349,7 @@ export function ColorSelector({
                           "flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity",
                           "hover:bg-destructive/80"
                         )}
-                        title="Delete color"
+                        title={tc("delete")}
                       >
                         {isDeleting ? (
                           <Loader2 className="w-2.5 h-2.5 animate-spin" />
@@ -374,7 +376,7 @@ export function ColorSelector({
               disabled={disabled}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Custom Color
+              {t("addCustomColor")}
             </Button>
           ) : (
             <div className="space-y-2">
@@ -404,7 +406,7 @@ export function ColorSelector({
                 type="text"
                 value={customColorName}
                 onChange={(e) => setCustomColorName(e.target.value)}
-                placeholder="Color name (optional)"
+                placeholder={t("colorNameOptional")}
               />
               <div className="flex gap-2">
                 <Button
@@ -415,7 +417,7 @@ export function ColorSelector({
                   className="flex-1"
                 >
                   <Plus className="w-3 h-3 mr-1" />
-                  Use Once
+                  {t("useOnce")}
                 </Button>
                 <Button
                   size="sm"
@@ -428,7 +430,7 @@ export function ColorSelector({
                   ) : (
                     <Save className="w-3 h-3 mr-1" />
                   )}
-                  Save Color
+                  {t("saveColor")}
                 </Button>
               </div>
               <Button
@@ -441,7 +443,7 @@ export function ColorSelector({
                   setCustomColorName("");
                 }}
               >
-                Cancel
+                {tc("cancel")}
               </Button>
             </div>
           )}
@@ -451,7 +453,7 @@ export function ColorSelector({
         {selectedColors.length > 0 && (
           <div className="border-t border-border/50 pt-3">
             <Label className="text-xs text-muted-foreground mb-2 block">
-              Selected ({selectedColors.length} {selectedColors.length === 1 ? "color" : "colors"})
+              {t("selected", { count: selectedColors.length })}
             </Label>
             <div className="flex flex-wrap gap-1.5">
               {selectedColors.map((color) => (
@@ -481,7 +483,7 @@ export function ColorSelector({
         {/* Info */}
         {selectedColors.length === 0 && (
           <p className="text-xs text-center text-muted-foreground">
-            Select colors to generate mockups in different variants
+            {t("selectColorsHint")}
           </p>
         )}
       </CardContent>

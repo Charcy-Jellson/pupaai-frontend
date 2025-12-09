@@ -41,12 +41,14 @@ export function OptionsPanel({
   onPantsTypeChange,
   disabled = false,
 }: OptionsPanelProps) {
+  const t = useTranslations("modelStudio.optionsPanel");
+
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-orange-400" />
-          Generation Options
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -54,7 +56,7 @@ export function OptionsPanel({
         <div className="space-y-2">
           <Label className="text-sm flex items-center gap-2">
             <MapPin className="w-3 h-3 text-muted-foreground" />
-            Scene (Single)
+            {t("scene")}
           </Label>
           <Select
             value={selectedScene}
@@ -83,7 +85,7 @@ export function OptionsPanel({
         <div className="space-y-2">
           <Label className="text-sm flex items-center gap-2">
             <Move className="w-3 h-3 text-muted-foreground" />
-            Poses (Multi-select)
+            {t("poses")}
           </Label>
           <div className="flex flex-wrap gap-2">
             {POSE_OPTIONS.map((option) => {
@@ -109,7 +111,7 @@ export function OptionsPanel({
             })}
           </div>
           <p className="text-xs text-muted-foreground">
-            {selectedPoses.length} pose(s) selected - generates one image per pose
+            {t("posesSelected", { count: selectedPoses.length })}
           </p>
         </div>
 
@@ -117,7 +119,7 @@ export function OptionsPanel({
         <div className="space-y-2">
           <Label className="text-sm flex items-center gap-2">
             <Footprints className="w-3 h-3 text-muted-foreground" />
-            Bottom Wear (Single)
+            {t("bottomWear")}
           </Label>
           <Select
             value={selectedPantsType}
@@ -140,13 +142,13 @@ export function OptionsPanel({
         {/* Summary */}
         <div className="pt-3 border-t border-border/50">
           <div className="text-xs text-muted-foreground">
-            <span className="font-medium">Generation Summary:</span>
+            <span className="font-medium">{t("generationSummary")}:</span>
             <div className="mt-2 flex flex-wrap gap-1">
               <Badge variant="outline" className="text-xs">
-                Scene: {SCENE_OPTIONS.find((s) => s.id === selectedScene)?.name}
+                {t("sceneLabel")}: {SCENE_OPTIONS.find((s) => s.id === selectedScene)?.name}
               </Badge>
               <Badge variant="outline" className="text-xs">
-                {selectedPoses.length} Pose(s)
+                {selectedPoses.length} {t("posesLabel")}
               </Badge>
               <Badge variant="outline" className="text-xs">
                 {PANTS_OPTIONS.find((p) => p.id === selectedPantsType)?.name}
@@ -158,8 +160,3 @@ export function OptionsPanel({
     </Card>
   );
 }
-
-
-
-
-

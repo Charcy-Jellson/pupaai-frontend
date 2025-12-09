@@ -59,6 +59,8 @@ export function ResultsGallery({
   onRetry,
   onDownloadAll,
 }: ResultsGalleryProps) {
+  const t = useTranslations("productMockup.results");
+  const tc = useTranslations("common");
   const { user } = useUser();
   const { toast } = useToast();
   const pathname = usePathname();
@@ -167,13 +169,13 @@ export function ResultsGallery({
       setNewFolderName("");
       setShowNewFolder(false);
       toast({
-        title: "Folder Created",
-        description: `"${folder.name}" has been created.`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder.",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
@@ -211,8 +213,8 @@ export function ResultsGallery({
       }
 
       toast({
-        title: "Saved!",
-        description: `${savedCount} of ${successfulResults.length} mockups saved.`,
+        title: t("saved"),
+        description: t("savedCount", { saved: savedCount, total: successfulResults.length }),
       });
     } else if (resultToSave?.imageDataUrl) {
       // Save single result
@@ -229,16 +231,16 @@ export function ResultsGallery({
 
         if (saved) {
           toast({
-            title: "Saved!",
-            description: `${resultToSave.colorName} mockup saved.`,
+            title: t("saved"),
+            description: t("savedSingle", { name: resultToSave.colorName }),
           });
         } else {
           throw new Error("Failed to save");
         }
       } catch {
         toast({
-          title: "Save Failed",
-          description: "Could not save mockup.",
+          title: t("saveFailed"),
+          description: t("saveFailedDesc"),
           variant: "destructive",
         });
       }
@@ -260,7 +262,7 @@ export function ResultsGallery({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-violet-400" />
-              Generated Mockups
+              {t("title")}
               {results.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {successCount}/{results.length}
@@ -276,7 +278,7 @@ export function ResultsGallery({
                   className="h-7 px-2 text-xs"
                 >
                   <Download className="w-3 h-3 mr-1" />
-                  All
+                  {t("all")}
                 </Button>
                 <Button
                   variant="outline"
@@ -285,7 +287,7 @@ export function ResultsGallery({
                   className="h-7 px-2 text-xs"
                 >
                   <Save className="w-3 h-3 mr-1" />
-                  Save All
+                  {t("saveAll")}
                 </Button>
               </div>
             )}
@@ -298,8 +300,7 @@ export function ResultsGallery({
               <div className="flex items-center gap-2">
                 <LoadingSpinner size="sm" />
                 <span className="text-sm text-violet-300">
-                  Generating {processingCount} mockup
-                  {processingCount > 1 ? "s" : ""}...
+                  {t("generatingCount", { count: processingCount })}
                 </span>
               </div>
             </div>
@@ -332,13 +333,13 @@ export function ResultsGallery({
                   {successCount > 0 && (
                     <span className="text-green-400 flex items-center gap-1">
                       <Check className="w-4 h-4" />
-                      {successCount} successful
+                      {t("successful", { count: successCount })}
                     </span>
                   )}
                   {errorCount > 0 && (
                     <span className="text-red-400 flex items-center gap-1">
                       <X className="w-4 h-4" />
-                      {errorCount} failed
+                      {t("failed", { count: errorCount })}
                     </span>
                   )}
                 </div>
@@ -356,7 +357,7 @@ export function ResultsGallery({
                 className="w-5 h-5 rounded-full border border-border"
                 style={{ backgroundColor: previewResult?.color }}
               />
-              {previewResult?.colorName} Mockup
+              {previewResult?.colorName} {t("mockupLabel")}
             </DialogTitle>
           </DialogHeader>
           {previewResult?.imageDataUrl && (
@@ -374,7 +375,7 @@ export function ResultsGallery({
               onClick={() => previewResult && onDownload(previewResult)}
             >
               <Download className="w-4 h-4 mr-2" />
-              Download
+              {tc("download")}
             </Button>
             <Button
               onClick={() => {
@@ -385,7 +386,7 @@ export function ResultsGallery({
               }}
             >
               <Save className="w-4 h-4 mr-2" />
-              Save to Gallery
+              {t("saveToGallery")}
             </Button>
           </div>
         </DialogContent>
@@ -398,8 +399,8 @@ export function ResultsGallery({
             <DialogTitle className="flex items-center gap-2">
               <FolderOpen className="w-5 h-5 text-violet-400" />
               {savingAll
-                ? `Save ${successCount} Mockups`
-                : `Save ${resultToSave?.colorName} Mockup`}
+                ? t("saveAllTitle", { count: successCount })
+                : t("saveSingleTitle", { name: resultToSave?.colorName })}
             </DialogTitle>
           </DialogHeader>
 
@@ -443,7 +444,7 @@ export function ResultsGallery({
                   className="h-7 text-xs"
                 >
                   <Plus className="w-3.5 h-3.5 mr-1" />
-                  New Folder
+                  {t("newFolder")}
                 </Button>
               )}
             </div>
@@ -454,7 +455,7 @@ export function ResultsGallery({
                 <Input
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
-                  placeholder="Folder name"
+                  placeholder={t("folderName")}
                   className="flex-1"
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleCreateFolder();
@@ -471,7 +472,7 @@ export function ResultsGallery({
                   onClick={handleCreateFolder}
                   disabled={!newFolderName.trim() || isCreatingFolder}
                 >
-                  {isCreatingFolder ? "..." : "Create"}
+                  {isCreatingFolder ? "..." : tc("create")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -481,7 +482,7 @@ export function ResultsGallery({
                     setNewFolderName("");
                   }}
                 >
-                  Cancel
+                  {tc("cancel")}
                 </Button>
               </div>
             )}
@@ -504,7 +505,7 @@ export function ResultsGallery({
                         )}
                       >
                         <Home className="w-4 h-4" />
-                        <span className="text-sm font-medium">Root (Gallery)</span>
+                        <span className="text-sm font-medium">{t("rootGallery")}</span>
                         <Check className="w-4 h-4 ml-auto" />
                       </div>
                     )}
@@ -535,7 +536,7 @@ export function ResultsGallery({
 
                     {folders.length === 0 && currentFolderId !== null && (
                       <div className="text-center py-4 text-sm text-muted-foreground">
-                        No subfolders
+                        {t("noSubfolders")}
                       </div>
                     )}
                   </div>
@@ -544,11 +545,11 @@ export function ResultsGallery({
             </div>
 
             <p className="text-xs text-muted-foreground">
-              Save to:{" "}
+              {t("saveTo")}:{" "}
               <span className="text-violet-300">
                 {folderPath.length > 0
                   ? folderPath.map((f) => f.name).join(" / ")
-                  : "Root (Gallery)"}
+                  : t("rootGallery")}
               </span>
             </p>
           </div>
@@ -559,18 +560,18 @@ export function ResultsGallery({
               onClick={() => setSaveDialogOpen(false)}
               disabled={isSaving}
             >
-              Cancel
+              {tc("cancel")}
             </Button>
             <Button onClick={handleSaveToFolder} disabled={isSaving}>
               {isSaving ? (
                 <>
                   <LoadingSpinner size="sm" className="mr-2" />
-                  Saving...
+                  {t("saving")}
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4 mr-2" />
-                  Save Here
+                  {t("saveHere")}
                 </>
               )}
             </Button>
@@ -597,6 +598,8 @@ function ResultCard({
   onRetry,
   onPreview,
 }: ResultCardProps) {
+  const t = useTranslations("productMockup.results");
+
   const isProcessing =
     result.status === "pending" || result.status === "processing";
   const isSuccess = result.status === "fulfilled";
@@ -622,7 +625,7 @@ function ResultCard({
         {isProcessing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <LoadingSpinner size="md" />
-            <span className="text-xs text-muted-foreground">Generating...</span>
+            <span className="text-xs text-muted-foreground">{t("generating")}</span>
           </div>
         )}
 
@@ -652,7 +655,7 @@ function ResultCard({
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
             <X className="w-8 h-8 text-red-400" />
             <span className="text-xs text-red-400 text-center line-clamp-2">
-              {result.error || "Failed"}
+              {result.error || t("failedLabel")}
             </span>
             <Button
               variant="outline"
@@ -661,7 +664,7 @@ function ResultCard({
               className="h-7 text-xs"
             >
               <RefreshCw className="w-3 h-3 mr-1" />
-              Retry
+              {t("retry")}
             </Button>
           </div>
         )}

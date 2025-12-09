@@ -24,6 +24,8 @@ export function LogoHistory({
   onClear,
   disabled = false,
 }: LogoHistoryProps) {
+  const t = useTranslations("logoStudio.history");
+
   if (history.length === 0) {
     return null;
   }
@@ -34,7 +36,7 @@ export function LogoHistory({
         <div className="flex items-center justify-between">
           <CardTitle className="text-base flex items-center gap-2">
             <History className="w-4 h-4 text-blue-400" />
-            History
+            {t("title")}
           </CardTitle>
           <Button
             variant="ghost"
@@ -43,7 +45,7 @@ export function LogoHistory({
             disabled={disabled}
             className="text-xs text-muted-foreground hover:text-destructive"
           >
-            Clear All
+            {t("clearAll")}
           </Button>
         </div>
       </CardHeader>
@@ -70,7 +72,7 @@ export function LogoHistory({
                 >
                   <img
                     src={item.imageDataUrl}
-                    alt={item.description || "Generated logo"}
+                    alt={item.description || t("generatedLogo")}
                     className="w-full h-full object-contain"
                   />
                 </button>
@@ -114,4 +116,3 @@ export function LogoHistory({
     </Card>
   );
 }
-

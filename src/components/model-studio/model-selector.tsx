@@ -51,6 +51,8 @@ export function ModelSelector({
   disabled = false,
   children,
 }: ModelSelectorProps) {
+  const t = useTranslations("modelStudio.modelSelector");
+  const tc = useTranslations("common");
   const { user } = useUser();
   const { toast } = useToast();
   
@@ -84,14 +86,14 @@ export function ModelSelector({
       setFiles(filesData.filter((f) => f.mime_type?.startsWith("image/")));
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to load gallery",
+        title: tc("error"),
+        description: t("failedToLoadGallery"),
         variant: "destructive",
       });
     } finally {
       setIsLoadingGallery(false);
     }
-  }, [user?.id, currentFolderId, toast]);
+  }, [user?.id, currentFolderId, toast, t, tc]);
 
   useEffect(() => {
     if (modelSource === "gallery") {
@@ -127,13 +129,13 @@ export function ModelSelector({
         reader.readAsDataURL(blob);
       } catch {
         toast({
-          title: "Error",
-          description: "Failed to load image",
+          title: tc("error"),
+          description: t("failedToLoadImage"),
           variant: "destructive",
         });
       }
     }
-  }, [onImageSelect, toast]);
+  }, [onImageSelect, toast, t, tc]);
 
   // Create new folder
   const handleCreateFolder = useCallback(async () => {
@@ -147,18 +149,18 @@ export function ModelSelector({
       setNewFolderName("");
       setShowNewFolder(false);
       toast({
-        title: "Folder created",
-        description: `"${folder.name}" has been created`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
     setIsCreatingFolder(false);
-  }, [newFolderName, user?.id, currentFolderId, toast]);
+  }, [newFolderName, user?.id, currentFolderId, toast, t, tc]);
 
   // Navigate to folder
   const navigateToFolder = useCallback((folderId: string | null) => {
@@ -193,7 +195,7 @@ export function ModelSelector({
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
             <User className="w-4 h-4 text-emerald-400" />
-            Model Preview
+            {t("modelPreview")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -224,7 +226,7 @@ export function ModelSelector({
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <User className="w-4 h-4 text-emerald-400" />
-          Select Model
+          {t("selectModel")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -232,15 +234,15 @@ export function ModelSelector({
           <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="upload" className="text-xs">
               <Upload className="w-3 h-3 mr-1" />
-              Upload
+              {t("upload")}
             </TabsTrigger>
             <TabsTrigger value="gallery" className="text-xs">
               <ImageIcon className="w-3 h-3 mr-1" />
-              Gallery
+              {t("gallery")}
             </TabsTrigger>
             <TabsTrigger value="generate" className="text-xs">
               <Sparkles className="w-3 h-3 mr-1" />
-              Generate
+              {t("generate")}
             </TabsTrigger>
           </TabsList>
 
@@ -255,10 +257,10 @@ export function ModelSelector({
             >
               <Upload className="w-8 h-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
-                Click to upload model image
+                {t("clickToUpload")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                PNG, JPG, WebP supported
+                {t("supportedFormats")}
               </p>
               <input
                 type="file"
@@ -306,12 +308,12 @@ export function ModelSelector({
                 onClick={() => setShowNewFolder(true)}
               >
                 <Plus className="w-3 h-3 mr-1" />
-                New Folder
+                {t("newFolder")}
               </Button>
             ) : (
               <div className="flex gap-2 mb-3">
                 <Input
-                  placeholder="Folder name"
+                  placeholder={t("folderName")}
                   value={newFolderName}
                   onChange={(e) => setNewFolderName(e.target.value)}
                   className="h-8 text-sm"
@@ -323,7 +325,7 @@ export function ModelSelector({
                   onClick={handleCreateFolder}
                   disabled={isCreatingFolder || !newFolderName.trim()}
                 >
-                  Create
+                  {tc("create")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -334,7 +336,7 @@ export function ModelSelector({
                     setNewFolderName("");
                   }}
                 >
-                  Cancel
+                  {tc("cancel")}
                 </Button>
               </div>
             )}
@@ -351,7 +353,7 @@ export function ModelSelector({
                 }}
               >
                 <ArrowLeft className="w-3 h-3 mr-1" />
-                Back
+                {tc("back")}
               </Button>
             )}
 
@@ -359,7 +361,7 @@ export function ModelSelector({
             <div className="space-y-2 max-h-[200px] overflow-y-auto">
               {isLoadingGallery ? (
                 <div className="text-center text-sm text-muted-foreground py-4">
-                  Loading...
+                  {tc("loading")}
                 </div>
               ) : (
                 <>
@@ -394,7 +396,7 @@ export function ModelSelector({
 
                   {folders.length === 0 && files.length === 0 && (
                     <div className="text-center text-sm text-muted-foreground py-4">
-                      No files found
+                      {t("noFilesFound")}
                     </div>
                   )}
                 </>
@@ -411,8 +413,3 @@ export function ModelSelector({
     </Card>
   );
 }
-
-
-
-
-

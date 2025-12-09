@@ -122,13 +122,13 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
       setNewFolderName("");
       setShowNewFolder(false);
       toast({
-        title: "Folder Created",
-        description: `"${folder.name}" has been created.`,
+        title: t("folderCreated"),
+        description: t("folderCreatedDesc", { name: folder.name }),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to create folder.",
+        title: tc("error"),
+        description: t("failedToCreateFolder"),
         variant: "destructive",
       });
     }
@@ -144,13 +144,13 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
     if (success) {
       setFiles((prev) => prev.filter((f) => f.id !== fileToDelete.id));
       toast({
-        title: "File Deleted",
-        description: "The file has been removed.",
+        title: t("fileDeleted"),
+        description: t("fileDeletedDesc"),
       });
     } else {
       toast({
-        title: "Error",
-        description: "Failed to delete file. Please try again.",
+        title: tc("error"),
+        description: t("failedToDeleteFile"),
         variant: "destructive",
       });
     }
@@ -174,10 +174,10 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
         <FolderOpen className="w-8 h-8 text-muted-foreground" />
       </div>
       <h3 className="text-lg font-medium text-white mb-2">
-        {currentFolderId ? "This folder is empty" : "No files yet"}
+        {currentFolderId ? t("folderEmpty") : t("noFilesYet")}
       </h3>
       <p className="text-sm text-muted-foreground max-w-sm">
-        Upload and save images to access them from your gallery.
+        {t("uploadAndSaveImages")}
       </p>
     </div>
   );
@@ -226,7 +226,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
                 className="h-8"
               >
                 <ArrowLeft className="w-4 h-4 mr-1" />
-                Back
+                {tc("back")}
               </Button>
             )}
             
@@ -239,7 +239,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
                 className="h-8"
               >
                 <Plus className="w-4 h-4 mr-1" />
-                New Folder
+                {t("newFolder")}
               </Button>
             )}
           </div>
@@ -250,7 +250,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
               <Input
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                placeholder="Folder name"
+                placeholder={t("folderName")}
                 className="flex-1"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleCreateFolder();
@@ -266,7 +266,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
                 onClick={handleCreateFolder}
                 disabled={!newFolderName.trim() || isCreatingFolder}
               >
-                {isCreatingFolder ? "..." : "Create"}
+                {isCreatingFolder ? "..." : tc("create")}
               </Button>
               <Button
                 variant="ghost"
@@ -276,7 +276,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
                   setNewFolderName("");
                 }}
               >
-                Cancel
+                {tc("cancel")}
               </Button>
             </div>
           )}
@@ -372,20 +372,19 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete File</AlertDialogTitle>
+            <AlertDialogTitle>{t("deleteFile")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{fileToDelete?.name}&quot;? 
-              This action cannot be undone.
+              {t("deleteFileConfirm", { name: fileToDelete?.name })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{tc("cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={isDeleting}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {isDeleting ? t("deleting") : tc("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

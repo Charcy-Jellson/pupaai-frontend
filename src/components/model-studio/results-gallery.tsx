@@ -44,6 +44,8 @@ export function ModelStudioResults({
   onRetry,
   onDownloadAll,
 }: ModelStudioResultsProps) {
+  const t = useTranslations("modelStudio.results");
+  const tc = useTranslations("common");
   const { user } = useUser();
   const { toast } = useToast();
   const pathname = usePathname();
@@ -87,16 +89,16 @@ export function ModelStudioResults({
 
         if (saved) {
           toast({
-            title: "Saved!",
-            description: `"${fileName}" saved to gallery`,
+            title: t("saved"),
+            description: t("savedDesc", { name: fileName }),
           });
         } else {
           throw new Error("Failed to save");
         }
       } catch {
         toast({
-          title: "Save Failed",
-          description: "Could not save image to gallery",
+          title: t("saveFailed"),
+          description: t("saveFailedDesc"),
           variant: "destructive",
         });
       } finally {
@@ -105,7 +107,7 @@ export function ModelStudioResults({
         setFileToSave(null);
       }
     },
-    [user?.id, fileToSave, toast]
+    [user?.id, fileToSave, toast, t]
   );
 
   const handleSaveAll = useCallback(
@@ -133,15 +135,15 @@ export function ModelStudioResults({
       }
 
       toast({
-        title: "Batch Save Complete",
-        description: `${savedCount}/${successfulResults.length} images saved`,
+        title: t("batchSaveComplete"),
+        description: t("batchSaveDesc", { saved: savedCount, total: successfulResults.length }),
       });
 
       setIsSaving(false);
       setSaveDialogOpen(false);
       setSaveAllMode(false);
     },
-    [user?.id, successfulResults, toast]
+    [user?.id, successfulResults, toast, t]
   );
 
   if (results.length === 0 && processingCount === 0) {
@@ -155,11 +157,11 @@ export function ModelStudioResults({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
               <ImageIcon className="w-4 h-4 text-violet-400" />
-              Results
+              {t("title")}
               {processingCount > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                  {processingCount} processing
+                  {t("processing", { count: processingCount })}
                 </Badge>
               )}
             </CardTitle>
@@ -175,11 +177,11 @@ export function ModelStudioResults({
                   disabled={isSaving}
                 >
                   <Save className="w-3 h-3 mr-1" />
-                  Save All
+                  {t("saveAll")}
                 </Button>
                 <Button variant="outline" size="sm" onClick={onDownloadAll}>
                   <Download className="w-3 h-3 mr-1" />
-                  Download All
+                  {t("downloadAll")}
                 </Button>
               </div>
             )}
@@ -192,19 +194,19 @@ export function ModelStudioResults({
               {successfulResults.length > 0 && (
                 <div className="flex items-center gap-1 text-green-400">
                   <Check className="w-4 h-4" />
-                  {successfulResults.length} completed
+                  {t("completed", { count: successfulResults.length })}
                 </div>
               )}
               {failedResults.length > 0 && (
                 <div className="flex items-center gap-1 text-red-400">
                   <X className="w-4 h-4" />
-                  {failedResults.length} failed
+                  {t("failed", { count: failedResults.length })}
                 </div>
               )}
               {pendingResults.length > 0 && (
                 <div className="flex items-center gap-1 text-yellow-400">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  {pendingResults.length} in progress
+                  {t("inProgress", { count: pendingResults.length })}
                 </div>
               )}
             </div>
@@ -232,7 +234,7 @@ export function ModelStudioResults({
                   <div className="w-full h-full bg-red-500/10 flex flex-col items-center justify-center p-4">
                     <AlertCircle className="w-8 h-8 text-red-400 mb-2" />
                     <p className="text-xs text-red-400 text-center">
-                      {result.error || "Failed"}
+                      {result.error || t("failedLabel")}
                     </p>
                     <Button
                       variant="outline"
@@ -241,7 +243,7 @@ export function ModelStudioResults({
                       onClick={() => onRetry(result.id)}
                     >
                       <RotateCcw className="w-3 h-3 mr-1" />
-                      Retry
+                      {t("retry")}
                     </Button>
                   </div>
                 ) : (
@@ -323,7 +325,7 @@ export function ModelStudioResults({
                   onClick={() => onDownload(previewResult)}
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Download
+                  {tc("download")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -335,7 +337,7 @@ export function ModelStudioResults({
                   }}
                 >
                   <Save className="w-4 h-4 mr-2" />
-                  Save to Gallery
+                  {t("saveToGallery")}
                 </Button>
               </div>
             </div>
@@ -361,8 +363,3 @@ export function ModelStudioResults({
     </>
   );
 }
-
-
-
-
-

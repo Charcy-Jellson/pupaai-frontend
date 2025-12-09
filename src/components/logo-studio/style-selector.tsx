@@ -18,12 +18,14 @@ export function StyleSelector({
   onStyleSelect,
   disabled = false,
 }: StyleSelectorProps) {
+  const t = useTranslations("logoStudio.styleSelector");
+
   return (
     <Card className="bg-card/50 backdrop-blur border-border/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <Palette className="w-4 h-4 text-violet-400" />
-          Style (Optional)
+          {t("title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -60,4 +62,3 @@ export function StyleSelector({
     </Card>
   );
 }
-
