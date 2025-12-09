@@ -374,7 +374,7 @@ export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps
           <AlertDialogHeader>
             <AlertDialogTitle>{t("deleteFile")}</AlertDialogTitle>
             <AlertDialogDescription>
-              {t("deleteFileConfirm", { name: fileToDelete?.name })}
+              {t("deleteFileConfirm", { name: fileToDelete?.name ?? "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
