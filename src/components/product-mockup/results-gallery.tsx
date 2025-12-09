@@ -400,7 +400,7 @@ export function ResultsGallery({
               <FolderOpen className="w-5 h-5 text-violet-400" />
               {savingAll
                 ? t("saveAllTitle", { count: successCount })
-                : t("saveSingleTitle", { name: resultToSave?.colorName })}
+                : t("saveSingleTitle", { name: resultToSave?.colorName ?? "" })}
             </DialogTitle>
           </DialogHeader>
 
