@@ -1,31 +1,8 @@
-import Link from "next/link";
-import { Sparkles, Github, Twitter, Linkedin } from "lucide-react";
+"use client";
 
-const footerLinks = {
-  product: [
-    { name: "Features", href: "/#features" },
-    { name: "Pricing", href: "/pricing" },
-    { name: "Changelog", href: "/changelog" },
-    { name: "Roadmap", href: "/roadmap" },
-  ],
-  company: [
-    { name: "About", href: "/about" },
-    { name: "Blog", href: "/blog" },
-    { name: "Careers", href: "/careers" },
-    { name: "Contact", href: "/contact" },
-  ],
-  resources: [
-    { name: "Documentation", href: "/docs" },
-    { name: "API Reference", href: "/api" },
-    { name: "Support", href: "/support" },
-    { name: "Status", href: "/status" },
-  ],
-  legal: [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Cookie Policy", href: "/cookies" },
-  ],
-};
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/routing";
+import { Sparkles, Github, Twitter, Linkedin } from "lucide-react";
 
 const socialLinks = [
   { name: "GitHub", icon: Github, href: "https://github.com" },
@@ -34,6 +11,34 @@ const socialLinks = [
 ];
 
 export function Footer() {
+  const t = useTranslations();
+
+  const footerLinks = {
+    product: [
+      { name: t("nav.features"), href: "/#features" },
+      { name: t("nav.pricing"), href: "/pricing" },
+      { name: t("nav.changelog"), href: "/changelog" },
+      { name: t("nav.roadmap"), href: "/roadmap" },
+    ],
+    company: [
+      { name: t("nav.about"), href: "/about" },
+      { name: t("nav.blog"), href: "/blog" },
+      { name: t("nav.careers"), href: "/careers" },
+      { name: t("nav.contact"), href: "/contact" },
+    ],
+    resources: [
+      { name: t("nav.documentation"), href: "/docs" },
+      { name: t("nav.apiReference"), href: "/api" },
+      { name: t("nav.support"), href: "/support" },
+      { name: t("nav.status"), href: "/status" },
+    ],
+    legal: [
+      { name: t("nav.privacyPolicy"), href: "/privacy" },
+      { name: t("nav.termsOfService"), href: "/terms" },
+      { name: t("nav.cookiePolicy"), href: "/cookies" },
+    ],
+  };
+
   return (
     <footer className="relative border-t border-border/50 bg-background/50 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
@@ -49,8 +54,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs mb-6">
-              Transform your creative workflow with AI-powered image and video tools. 
-              From concept to creation.
+              {t("home.footerDescription")}
             </p>
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (
@@ -70,7 +74,7 @@ export function Footer() {
 
           {/* Product Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Product</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t("nav.product")}</h3>
             <ul className="space-y-3">
               {footerLinks.product.map((link) => (
                 <li key={link.name}>
@@ -87,7 +91,7 @@ export function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Company</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t("nav.company")}</h3>
             <ul className="space-y-3">
               {footerLinks.company.map((link) => (
                 <li key={link.name}>
@@ -104,7 +108,7 @@ export function Footer() {
 
           {/* Resources Links */}
           <div>
-            <h3 className="text-sm font-semibold text-white mb-4">Resources</h3>
+            <h3 className="text-sm font-semibold text-white mb-4">{t("nav.resources")}</h3>
             <ul className="space-y-3">
               {footerLinks.resources.map((link) => (
                 <li key={link.name}>
@@ -123,7 +127,7 @@ export function Footer() {
         {/* Bottom Section */}
         <div className="mt-12 pt-8 border-t border-border/50 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} Pupa AI Studio. All rights reserved.
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </p>
           <div className="flex items-center gap-6">
             {footerLinks.legal.map((link) => (
@@ -141,11 +145,3 @@ export function Footer() {
     </footer>
   );
 }
-
-
-
-
-
-
-
-

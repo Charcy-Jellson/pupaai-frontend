@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
 import { motion } from "framer-motion";
@@ -18,6 +19,8 @@ interface ImagePreviewProps {
 }
 
 export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation = 0 }: ImagePreviewProps) {
+  const t = useTranslations("imageTools");
+  const tc = useTranslations("common");
   const [crop, setCrop] = useState<Crop>();
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropping, setIsCropping] = useState(false);

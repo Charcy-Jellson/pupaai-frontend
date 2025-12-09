@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";

@@ -1,23 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-const navigation = [
-  { name: "Features", href: "/#features" },
-  { name: "Pricing", href: "/pricing" },
-  { name: "About", href: "/about" },
-];
+import { Link } from "@/i18n/routing";
+import { LanguageSwitcher } from "@/components/common/language-switcher";
 
 export function TopBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const t = useTranslations();
+
+  const navigation = [
+    { name: t("nav.features"), href: "/#features" },
+    { name: t("nav.pricing"), href: "/pricing" },
+    { name: t("nav.about"), href: "/about" },
+  ];
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50">
@@ -58,15 +61,18 @@ export function TopBar() {
 
           {/* Auth Buttons */}
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <LanguageSwitcher />
+
             <SignedOut>
               <Link href="/sign-in" className="hidden sm:block">
                 <Button variant="ghost" size="sm">
-                  Sign In
+                  {t("common.signIn")}
                 </Button>
               </Link>
               <Link href="/sign-up">
                 <Button variant="gradient" size="sm">
-                  Get Started
+                  {t("common.getStarted")}
                 </Button>
               </Link>
             </SignedOut>
@@ -74,7 +80,7 @@ export function TopBar() {
             <SignedIn>
               <Link href="/dashboard/image-tools">
                 <Button variant="gradient" size="sm">
-                  Dashboard
+                  {t("common.dashboard")}
                 </Button>
               </Link>
               <UserButton
@@ -135,7 +141,7 @@ export function TopBar() {
                     className="block px-4 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Sign In
+                    {t("common.signIn")}
                   </Link>
                 </SignedOut>
               </div>
@@ -146,11 +152,3 @@ export function TopBar() {
     </header>
   );
 }
-
-
-
-
-
-
-
-

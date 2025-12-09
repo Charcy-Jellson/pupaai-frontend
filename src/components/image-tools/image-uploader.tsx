@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
@@ -18,6 +19,7 @@ export function ImageUploader({
   maxSize = 10 * 1024 * 1024, // 10MB default
   acceptedFormats = ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }: ImageUploaderProps) {
+  const t = useTranslations("imageTools");
   const [error, setError] = useState<string | null>(null);
 
   const onDrop = useCallback(

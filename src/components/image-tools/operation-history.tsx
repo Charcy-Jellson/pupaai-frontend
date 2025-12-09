@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
@@ -43,6 +44,7 @@ const operationLabels: Record<ImageOperation["type"], string> = {
 };
 
 export function OperationHistory({ operations, onUndo }: OperationHistoryProps) {
+  const t = useTranslations("imageTools");
   return (
     <Card className="bg-card/50 border-border/50">
       <CardHeader className="pb-3">

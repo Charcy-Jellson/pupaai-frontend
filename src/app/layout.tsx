@@ -20,7 +20,7 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Pupa AI Studio",
   description: "Transform your creative workflow with AI-powered tools",
-  keywords: ["AI", "Image Processing", "Video Tools", "Creative Suite"],
+  keywords: ["AI", "Image Processing", "Video Tools", "Creative Suite", "E-commerce"],
   authors: [{ name: "Pupa AI" }],
   openGraph: {
     title: "Pupa AI Studio",
@@ -36,7 +36,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark" suppressHydrationWarning>
+      <html className="dark" suppressHydrationWarning>
         <body
           className={`${outfit.variable} ${jetbrainsMono.variable} font-sans antialiased`}
           suppressHydrationWarning
@@ -50,4 +50,3 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
-

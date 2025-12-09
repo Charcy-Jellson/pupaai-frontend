@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";

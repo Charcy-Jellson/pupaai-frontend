@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { 
   getUserFiles, 
   getAllUserFolders,
@@ -45,6 +46,8 @@ interface SavedImagesGalleryProps {
 
 export function SavedImagesGallery({ userId, onSelect }: SavedImagesGalleryProps) {
   const pathname = usePathname();
+  const t = useTranslations("imageTools");
+  const tc = useTranslations("common");
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [folders, setFolders] = useState<FolderRecord[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);

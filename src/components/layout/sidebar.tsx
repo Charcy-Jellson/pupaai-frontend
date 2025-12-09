@@ -1,18 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUserRole } from "@/hooks/use-user-role";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Link } from "@/i18n/routing";
 import {
   Sparkles,
   ImageIcon,
-  Palette,
   Video,
   TrendingUp,
   Users,
@@ -26,72 +26,72 @@ import {
 } from "lucide-react";
 
 interface NavItem {
-  name: string;
+  nameKey: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
+  badgeKey?: string;
 }
 
 interface NavGroup {
-  name: string;
+  nameKey: string;
   items: NavItem[];
   adminOnly?: boolean;
 }
 
 const navigationGroups: NavGroup[] = [
   {
-    name: "Creation Suite",
+    nameKey: "sidebar.creationSuite",
     items: [
       { 
-        name: "Image Tools", 
+        nameKey: "sidebar.imageTools", 
         href: "/dashboard/image-tools", 
         icon: ImageIcon,
       },
       { 
-        name: "Product Mockup", 
+        nameKey: "sidebar.productMockup", 
         href: "/dashboard/product-mockup", 
         icon: Shirt,
       },
       { 
-        name: "Model Studio", 
+        nameKey: "sidebar.modelStudio", 
         href: "/dashboard/model-studio", 
         icon: User,
       },
       { 
-        name: "Logo Studio", 
+        nameKey: "sidebar.logoStudio", 
         href: "/dashboard/logo-studio", 
         icon: Wand2,
       },
       { 
-        name: "Video Tools", 
+        nameKey: "sidebar.videoTools", 
         href: "/dashboard/video-tools", 
         icon: Video,
-        badge: "Soon",
+        badgeKey: "sidebar.soon",
       },
     ],
   },
   {
-    name: "Marketing",
+    nameKey: "sidebar.marketing",
     items: [
       { 
-        name: "SEO", 
+        nameKey: "sidebar.seo", 
         href: "/dashboard/seo", 
         icon: TrendingUp,
-        badge: "Soon",
+        badgeKey: "sidebar.soon",
       },
     ],
   },
   {
-    name: "System",
+    nameKey: "sidebar.system",
     adminOnly: true,
     items: [
       { 
-        name: "User Management", 
+        nameKey: "sidebar.userManagement", 
         href: "/dashboard/admin/users", 
         icon: Users,
       },
       { 
-        name: "Settings", 
+        nameKey: "sidebar.settings", 
         href: "/dashboard/admin/settings", 
         icon: Settings,
       },
@@ -108,11 +108,15 @@ interface SidebarProps {
 
 export function Sidebar({ isCollapsed, onToggle, isMobile, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { isAdmin, isLoading } = useUserRole();
+  const { isAdmin } = useUserRole();
+  const t = useTranslations();
 
   const filteredGroups = navigationGroups.filter(
     (group) => !group.adminOnly || isAdmin
   );
+
+  // Remove locale prefix from pathname for comparison
+  const normalizedPathname = pathname.replace(/^\/(en|zh)/, '');
 
   return (
     <div
@@ -159,15 +163,15 @@ export function Sidebar({ isCollapsed, onToggle, isMobile, onMobileClose }: Side
       <ScrollArea className="flex-1 py-4">
         <div className="px-3 space-y-6">
           {filteredGroups.map((group, groupIndex) => (
-            <div key={group.name}>
+            <div key={group.nameKey}>
               {!isCollapsed && (
                 <h3 className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  {group.name}
+                  {t(group.nameKey)}
                 </h3>
               )}
               <div className="space-y-1">
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href;
+                  const isActive = normalizedPathname === item.href || normalizedPathname.startsWith(item.href + '/');
                   return (
                     <Link
                       key={item.href}
@@ -196,11 +200,11 @@ export function Sidebar({ isCollapsed, onToggle, isMobile, onMobileClose }: Side
                       {!isCollapsed && (
                         <>
                           <span className="flex-1 text-sm font-medium whitespace-nowrap">
-                            {item.name}
+                            {t(item.nameKey)}
                           </span>
-                          {item.badge && (
+                          {item.badgeKey && (
                             <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                              {item.badge}
+                              {t(item.badgeKey)}
                             </span>
                           )}
                         </>
@@ -209,10 +213,10 @@ export function Sidebar({ isCollapsed, onToggle, isMobile, onMobileClose }: Side
                       {/* Tooltip for collapsed state */}
                       {isCollapsed && (
                         <div className="absolute left-full ml-2 px-2 py-1 rounded-md bg-popover text-popover-foreground text-sm whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity shadow-lg border border-border z-50">
-                          {item.name}
-                          {item.badge && (
+                          {t(item.nameKey)}
+                          {item.badgeKey && (
                             <span className="ml-2 text-xs text-muted-foreground">
-                              ({item.badge})
+                              ({t(item.badgeKey)})
                             </span>
                           )}
                         </div>
@@ -234,11 +238,11 @@ export function Sidebar({ isCollapsed, onToggle, isMobile, onMobileClose }: Side
         <div className="p-4 border-t border-border/50">
           <div className="px-3 py-3 rounded-lg bg-gradient-to-br from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20">
             <p className="text-xs text-muted-foreground mb-2">
-              Need help getting started?
+              {t("common.needHelp")}
             </p>
             <Link href="/docs">
               <Button variant="secondary" size="sm" className="w-full text-xs">
-                View Documentation
+                {t("common.viewDocs")}
               </Button>
             </Link>
           </div>
@@ -313,7 +317,3 @@ export function MobileSidebar({
     </AnimatePresence>
   );
 }
-
-
-
-
