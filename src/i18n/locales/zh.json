@@ -22,7 +22,10 @@
     "back": "返回",
     "reset": "重置",
     "confirm": "确认",
-    "close": "关闭"
+    "close": "关闭",
+    "comingSoon": "即将推出",
+    "moreComingSoon": "更多即将推出",
+    "soon": "即将"
   },
   "nav": {
     "features": "功能",
@@ -96,8 +99,7 @@
     "seo": "SEO",
     "system": "系统",
     "userManagement": "用户管理",
-    "settings": "设置",
-    "soon": "即将"
+    "settings": "设置"
   },
   "imageTools": {
     "title": "图像工具",
@@ -576,6 +578,79 @@
       "feature": "功能",
       "selectDefault": "选择默认",
       "noModels": "未配置模型"
+    }
+  },
+  "videoTools": {
+    "title": "视频工具",
+    "subtitle": "AI 驱动的视频处理和去水印工具",
+    "tools": {
+      "removewatermark": "去水印",
+      "texttovideo": "文字生成视频",
+      "imagetovideo": "图片生成视频"
+    },
+    "methods": {
+      "urlparse": "URL 解析 (Sora)",
+      "airemove": "AI 去除"
+    },
+    "urlParser": {
+      "infoTitle": "从公开链接提取无水印视频",
+      "infoDescription": "粘贴 Sora 公开分享链接以提取原始无水印视频。工具会分析页面找到干净的视频源。",
+      "inputTitle": "视频链接",
+      "inputPlaceholder": "在此粘贴 Sora 公开分享链接...",
+      "paste": "粘贴",
+      "pasteError": "无法读取剪贴板",
+      "parse": "解析",
+      "parsing": "解析中...",
+      "parseSuccess": "视频解析成功！",
+      "parseFailed": "视频解析失败",
+      "unsupportedPlatform": "不支持的平台。目前仅支持 Sora 公开链接。",
+      "supportedPlatforms": "支持的平台",
+      "download": "下载",
+      "copyUrl": "复制链接",
+      "urlCopied": "视频链接已复制到剪贴板",
+      "openInNewTab": "打开",
+      "videoUrl": "视频链接",
+      "untitledVideo": "未命名视频",
+      "howToUse": "使用方法",
+      "step1": "打开 Sora 视频并复制其公开分享链接",
+      "step2": "将链接粘贴到上方输入框",
+      "step3": "点击解析以提取无水印视频链接"
+    },
+    "aiRemover": {
+      "title": "AI 去水印",
+      "description": "上传视频，让 AI 自动检测并去除水印。即将推出先进的图像修复技术。",
+      "plannedFeatures": "计划功能",
+      "features": {
+        "uploadVideo": "上传视频文件 (MP4, MOV, WebM)",
+        "detectWatermark": "自动检测水印",
+        "aiRemoval": "AI 智能修复去除",
+        "downloadClean": "下载无水印视频"
+      },
+      "uploadPlaceholder": "视频上传功能即将推出..."
+    },
+    "textToVideo": {
+      "title": "文字生成视频",
+      "description": "使用 AI 从文字描述生成精彩视频。只需一句话即可创建宣传视频、动画等。",
+      "plannedFeatures": "计划功能",
+      "features": {
+        "promptInput": "自然语言提示输入",
+        "styleSelection": "多种视频风格",
+        "durationControl": "可调节视频时长",
+        "aiGeneration": "高质量 AI 生成"
+      },
+      "inputPlaceholder": "文字生成视频功能即将推出..."
+    },
+    "imageToVideo": {
+      "title": "图片生成视频",
+      "description": "将静态图片转换为动态视频。添加动效、转场和特效，让图片活起来。",
+      "plannedFeatures": "计划功能",
+      "features": {
+        "imageUpload": "上传源图片",
+        "motionPrompt": "描述期望的动效",
+        "durationSettings": "控制视频长度",
+        "videoGeneration": "AI 驱动视频合成"
+      },
+      "uploadPlaceholder": "图片生成视频功能即将推出..."
     }
   },
   "dashboard": {

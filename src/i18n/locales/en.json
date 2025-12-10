@@ -22,7 +22,10 @@
     "back": "Back",
     "reset": "Reset",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "comingSoon": "Coming Soon",
+    "moreComingSoon": "More coming soon",
+    "soon": "Soon"
   },
   "nav": {
     "features": "Features",
@@ -96,8 +99,7 @@
     "seo": "SEO",
     "system": "System",
     "userManagement": "User Management",
-    "settings": "Settings",
-    "soon": "Soon"
+    "settings": "Settings"
   },
   "imageTools": {
     "title": "Image Tools",
@@ -576,6 +578,79 @@
       "feature": "Feature",
       "selectDefault": "Select Default",
       "noModels": "No models configured"
+    }
+  },
+  "videoTools": {
+    "title": "Video Tools",
+    "subtitle": "AI-powered video processing and watermark removal",
+    "tools": {
+      "removewatermark": "Remove Watermark",
+      "texttovideo": "Text to Video",
+      "imagetovideo": "Image to Video"
+    },
+    "methods": {
+      "urlparse": "URL Parse (Sora)",
+      "airemove": "AI Removal"
+    },
+    "urlParser": {
+      "infoTitle": "Extract Clean Video from Public Links",
+      "infoDescription": "Paste a public Sora share link to extract the original video without watermarks. The tool analyzes the page to find the clean video source.",
+      "inputTitle": "Video URL",
+      "inputPlaceholder": "Paste Sora public share link here...",
+      "paste": "Paste",
+      "pasteError": "Failed to read clipboard",
+      "parse": "Parse",
+      "parsing": "Parsing...",
+      "parseSuccess": "Video parsed successfully!",
+      "parseFailed": "Failed to parse video",
+      "unsupportedPlatform": "Unsupported platform. Currently only Sora public links are supported.",
+      "supportedPlatforms": "Supported platforms",
+      "download": "Download",
+      "copyUrl": "Copy URL",
+      "urlCopied": "Video URL copied to clipboard",
+      "openInNewTab": "Open",
+      "videoUrl": "Video URL",
+      "untitledVideo": "Untitled Video",
+      "howToUse": "How to Use",
+      "step1": "Open a Sora video and copy its public share link",
+      "step2": "Paste the link in the input field above",
+      "step3": "Click Parse to extract the clean video URL"
+    },
+    "aiRemover": {
+      "title": "AI Watermark Removal",
+      "description": "Upload a video and let AI automatically detect and remove watermarks. Coming soon with advanced inpainting technology.",
+      "plannedFeatures": "Planned Features",
+      "features": {
+        "uploadVideo": "Upload video files (MP4, MOV, WebM)",
+        "detectWatermark": "Automatic watermark detection",
+        "aiRemoval": "AI-powered inpainting removal",
+        "downloadClean": "Download watermark-free video"
+      },
+      "uploadPlaceholder": "Video upload will be available soon..."
+    },
+    "textToVideo": {
+      "title": "Text to Video",
+      "description": "Generate stunning videos from text descriptions using AI. Create promotional videos, animations, and more with just a prompt.",
+      "plannedFeatures": "Planned Features",
+      "features": {
+        "promptInput": "Natural language prompt input",
+        "styleSelection": "Multiple video styles",
+        "durationControl": "Adjustable video duration",
+        "aiGeneration": "High-quality AI generation"
+      },
+      "inputPlaceholder": "Text to video generation coming soon..."
+    },
+    "imageToVideo": {
+      "title": "Image to Video",
+      "description": "Transform static images into dynamic videos. Add motion, transitions, and effects to bring your images to life.",
+      "plannedFeatures": "Planned Features",
+      "features": {
+        "imageUpload": "Upload source images",
+        "motionPrompt": "Describe desired motion",
+        "durationSettings": "Control video length",
+        "videoGeneration": "AI-powered video synthesis"
+      },
+      "uploadPlaceholder": "Image to video generation coming soon..."
     }
   },
   "dashboard": {
