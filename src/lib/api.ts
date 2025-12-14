@@ -103,7 +103,8 @@ function buildModelStudioUrl(endpoint: string, modelId?: string): string {
 export async function extractLogo(
   imageBase64: string,
   mimeType: string,
-  modelId?: string
+  modelId?: string,
+  removeBackground: boolean = true
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildImageUrl("extract-logo", modelId), {
     method: "POST",
@@ -113,6 +114,7 @@ export async function extractLogo(
     body: JSON.stringify({
       image_base64: imageBase64,
       mime_type: mimeType,
+      remove_background: removeBackground,
     }),
   });
 

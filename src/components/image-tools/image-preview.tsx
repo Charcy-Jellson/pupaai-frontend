@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
 import "react-image-crop/dist/ReactCrop.css";
@@ -25,10 +25,67 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
   const [isCropping, setIsCropping] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [baseWidth, setBaseWidth] = useState<number | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate base width based on image and container dimensions
+  const calculateBaseWidth = useCallback(() => {
+    if (imgRef.current && containerRef.current) {
+      const img = imgRef.current;
+      
+      // Only proceed if image has natural dimensions
+      if (img.naturalWidth === 0 || img.naturalHeight === 0) return;
+      
+      // Calculate the natural display width based on container constraints
+      const containerWidth = containerRef.current.clientWidth - 32; // minus padding
+      const maxHeight = window.innerHeight * 0.5; // 50vh
+      
+      const aspectRatio = img.naturalWidth / img.naturalHeight;
+      
+      // Calculate width that fits within constraints
+      let displayWidth = Math.min(containerWidth, img.naturalWidth);
+      let displayHeight = displayWidth / aspectRatio;
+      
+      if (displayHeight > maxHeight) {
+        displayHeight = maxHeight;
+        displayWidth = displayHeight * aspectRatio;
+      }
+      
+      setBaseWidth(displayWidth);
+    }
+  }, []);
+
+  // Get base width when image loads via onLoad event
+  const handleImageLoad = useCallback(() => {
+    calculateBaseWidth();
+  }, [calculateBaseWidth]);
+
+  // Reset state when image changes
+  useEffect(() => {
+    setBaseWidth(null);
+    setZoom(1);
+    setCrop(undefined);
+    setCompletedCrop(undefined);
+    setIsCropping(false);
+  }, [imageUrl]);
+
+  // Check if image is already loaded (cached) and calculate base width
+  // This handles the case where onLoad doesn't fire for cached images
+  useEffect(() => {
+    // Use a small timeout to ensure the DOM is ready
+    const timeoutId = setTimeout(() => {
+      if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+        calculateBaseWidth();
+      }
+    }, 50);
+    
+    return () => clearTimeout(timeoutId);
+  }, [imageUrl, calculateBaseWidth]);
 
   const handleCropComplete = useCallback(() => {
     if (completedCrop && imgRef.current) {
+      // Calculate scale based on actual displayed size vs natural size
       const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
       const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
 
@@ -58,6 +115,17 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
     setZoom((prev) => Math.max(prev - 0.25, 0.5));
   };
 
+  const handleToggleCrop = () => {
+    if (!isCropping) {
+      setIsCropping(true);
+    } else {
+      handleCancelCrop();
+    }
+  };
+
+  // Calculate the actual display width based on zoom
+  const displayWidth = baseWidth ? baseWidth * zoom : undefined;
+
   return (
     <Card className="relative overflow-hidden bg-card/50 border-border/50">
       {/* Toolbar */}
@@ -66,7 +134,7 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
           <Button
             variant={isCropping ? "secondary" : "ghost"}
             size="sm"
-            onClick={() => setIsCropping(!isCropping)}
+            onClick={handleToggleCrop}
             disabled={isProcessing}
           >
             <CropIcon className="w-4 h-4 mr-2" />
@@ -75,13 +143,23 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={handleZoomOut} disabled={zoom <= 0.5}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleZoomOut} 
+            disabled={zoom <= 0.5}
+          >
             <ZoomOut className="w-4 h-4" />
           </Button>
           <span className="text-sm text-muted-foreground min-w-[4rem] text-center">
             {Math.round(zoom * 100)}%
           </span>
-          <Button variant="ghost" size="icon" onClick={handleZoomIn} disabled={zoom >= 3}>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={handleZoomIn} 
+            disabled={zoom >= 3}
+          >
             <ZoomIn className="w-4 h-4" />
           </Button>
         </div>
@@ -101,14 +179,12 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
       </div>
 
       {/* Image Container */}
-      <div className="relative overflow-auto" style={{ maxHeight: "60vh" }}>
-        <div
-          className="flex items-center justify-center min-h-[300px] p-4"
-          style={{
-            transform: `scale(${zoom})`,
-            transformOrigin: "center center",
-          }}
-        >
+      <div 
+        ref={containerRef}
+        className="relative overflow-auto" 
+        style={{ maxHeight: "60vh" }}
+      >
+        <div className="flex items-center justify-center min-h-[300px] p-4">
           {isCropping ? (
             <ReactCrop
               crop={crop}
@@ -120,19 +196,29 @@ export function ImagePreview({ imageUrl, isProcessing, onCrop, previewRotation =
                 ref={imgRef}
                 src={imageUrl}
                 alt="Preview"
-                className="max-w-full h-auto"
-                style={{ maxHeight: "50vh" }}
+                onLoad={handleImageLoad}
+                style={{
+                  width: displayWidth ? `${displayWidth}px` : "auto",
+                  maxWidth: "100%",
+                  height: "auto",
+                }}
               />
             </ReactCrop>
           ) : (
             <motion.img
+              ref={imgRef}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1, rotate: previewRotation }}
               transition={{ rotate: { duration: 0.15 } }}
               src={imageUrl}
               alt="Preview"
-              className="max-w-full h-auto rounded-lg shadow-xl"
-              style={{ maxHeight: "50vh" }}
+              onLoad={handleImageLoad}
+              className="rounded-lg shadow-xl"
+              style={{
+                width: displayWidth ? `${displayWidth}px` : "auto",
+                maxWidth: "100%",
+                height: "auto",
+              }}
             />
           )}
         </div>

@@ -1,6 +1,11 @@
+"use client";
+
 import { SignIn } from "@clerk/nextjs";
+import { useRegistrationEnabled } from "@/hooks";
 
 export default function SignInPage() {
+  const { registrationEnabled, isLoading } = useRegistrationEnabled();
+
   return (
     <SignIn
       appearance={{
@@ -21,6 +26,8 @@ export default function SignInPage() {
           formFieldAction: "text-violet-400 hover:text-violet-300",
           alertText: "text-muted-foreground",
           formFieldInputShowPasswordButton: "text-muted-foreground hover:text-white",
+          // Hide the "Don't have an account? Sign up" footer when registration is disabled
+          footer: !isLoading && !registrationEnabled ? "hidden" : undefined,
         },
         layout: {
           socialButtonsPlacement: "bottom",
@@ -30,4 +37,3 @@ export default function SignInPage() {
     />
   );
 }
-

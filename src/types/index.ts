@@ -42,6 +42,50 @@ export interface ImageEditorState {
   isProcessing: boolean;
 }
 
+// Multi-image types for batch operations
+export interface MultiImageItem {
+  id: string;
+  originalImage: string;
+  currentImage: string;
+  mimeType: string;
+  fileName: string;
+  operations: ImageOperation[];
+  isProcessing: boolean;
+  isSelected: boolean;
+  error?: string; // Store error message if operation failed
+}
+
+export interface MultiImageEditorState {
+  images: MultiImageItem[];
+  activeImageId: string | null; // For single-image operations like Crop
+  globalProcessing: boolean; // True when any batch operation is running
+}
+
+// Batch operation types
+export type BatchOperationType = 
+  | "rotate" 
+  | "resize" 
+  | "compress" 
+  | "remove-background" 
+  | "extract-logo" 
+  | "remove-logo";
+
+export interface BatchOperationParams {
+  rotate?: { degrees: number };
+  resize?: { width: number; height: number };
+  compress?: { targetSizeKB: number };
+  "remove-background"?: { modelId?: string };
+  "extract-logo"?: { modelId?: string; removeBackground?: boolean };
+  "remove-logo"?: { modelId?: string };
+}
+
+export interface BatchOperationResult {
+  imageId: string;
+  success: boolean;
+  resultUrl?: string;
+  error?: string;
+}
+
 export interface NavigationItem {
   name: string;
   href: string;

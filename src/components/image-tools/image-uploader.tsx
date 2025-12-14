@@ -6,16 +6,20 @@ import { useDropzone } from "react-dropzone";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { cn, formatBytes } from "@/lib/utils";
-import { Upload, ImageIcon, X, AlertCircle } from "lucide-react";
+import { Upload, ImageIcon, X, AlertCircle, Images } from "lucide-react";
 
 interface ImageUploaderProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect?: (file: File) => void;
+  onFilesSelect?: (files: File[]) => void;
+  multiple?: boolean;
   maxSize?: number; // in bytes
   acceptedFormats?: string[];
 }
 
 export function ImageUploader({
   onFileSelect,
+  onFilesSelect,
+  multiple = false,
   maxSize = 10 * 1024 * 1024, // 10MB default
   acceptedFormats = ["image/jpeg", "image/png", "image/webp", "image/gif"],
 }: ImageUploaderProps) {
@@ -39,17 +43,21 @@ export function ImageUploader({
       }
 
       if (acceptedFiles.length > 0) {
-        onFileSelect(acceptedFiles[0]);
+        if (multiple && onFilesSelect) {
+          onFilesSelect(acceptedFiles);
+        } else if (onFileSelect) {
+          onFileSelect(acceptedFiles[0]);
+        }
       }
     },
-    [onFileSelect, maxSize]
+    [onFileSelect, onFilesSelect, multiple, maxSize]
   );
 
   const { getRootProps, getInputProps, isDragActive, isDragReject } = useDropzone({
     onDrop,
     accept: acceptedFormats.reduce((acc, format) => ({ ...acc, [format]: [] }), {}),
     maxSize,
-    multiple: false,
+    multiple,
   });
 
   return (
@@ -82,6 +90,8 @@ export function ImageUploader({
             <X className="w-8 h-8 text-destructive" />
           ) : isDragActive ? (
             <Upload className="w-8 h-8 text-violet-400" />
+          ) : multiple ? (
+            <Images className="w-8 h-8 text-violet-400" />
           ) : (
             <ImageIcon className="w-8 h-8 text-violet-400" />
           )}
@@ -110,7 +120,7 @@ export function ImageUploader({
               exit={{ opacity: 0, y: -10 }}
             >
               <p className="text-violet-400 font-medium mb-2">
-                Drop your image here
+                {multiple ? t("dropImagesHere") : "Drop your image here"}
               </p>
               <p className="text-sm text-muted-foreground">
                 Release to upload
@@ -124,10 +134,12 @@ export function ImageUploader({
               exit={{ opacity: 0, y: -10 }}
             >
               <p className="text-white font-medium mb-2">
-                Drag and drop your image here
+                {multiple ? t("dragDropMultiple") : "Drag and drop your image here"}
               </p>
               <p className="text-sm text-muted-foreground mb-4">
-                or click to browse from your computer
+                {multiple 
+                  ? t("clickToBrowseMultiple")
+                  : "or click to browse from your computer"}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
                 <span className="px-2 py-1 rounded-md bg-muted/50">JPEG</span>

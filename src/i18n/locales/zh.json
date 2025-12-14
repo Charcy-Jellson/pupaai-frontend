@@ -201,7 +201,37 @@
     "rotateRight": "向右旋转",
     "applyRotation": "应用旋转",
     "cancelRotation": "取消",
-    "resizeImage": "调整图像大小"
+    "resizeImage": "调整图像大小",
+    "zoomDisabledWhileCropping": "裁剪时缩放被禁用",
+    "dropImagesHere": "将图片拖放到此处",
+    "dragDropMultiple": "拖放多张图片到此处",
+    "clickToBrowseMultiple": "或点击从电脑选择多个文件",
+    "extractLogoOptions": {
+      "removeBackground": "移除背景（透明）",
+      "keepBackground": "保留背景（白色）"
+    },
+    "multiImage": {
+      "images": "图片",
+      "selected": "已选择 {count} 张",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "clearAll": "清除全部",
+      "addMore": "添加更多",
+      "addMoreTitle": "添加更多图片",
+      "addMoreDescription": "上传新图片或从图库中选择，添加到当前批次。",
+      "selectedSummary": "已选择 {count} 张图片用于批量操作",
+      "clearSelection": "清除选择",
+      "processing": "处理图片中...",
+      "cropMode": "裁剪模式",
+      "operateOnSelected": "操作将应用于 {count} 张已选图片",
+      "selectToOperate": "选择图片以应用批量操作",
+      "saveImages": "保存 {count} 张图片",
+      "saveDescription": "将 {count} 张已选图片保存到图库。",
+      "saveSuccess": "图片已保存",
+      "savedCount": "已保存 {count} 张图片到「{folder}」。",
+      "saveCount": "保存 {count} 张图片",
+      "downloadStarted": "正在下载 {count} 张图片..."
+    }
   },
   "productMockup": {
     "title": "产品贴图",
@@ -577,7 +607,15 @@
       "description": "描述",
       "feature": "功能",
       "selectDefault": "选择默认",
-      "noModels": "未配置模型"
+      "noModels": "未配置模型",
+      "general": "通用设置",
+      "allowRegistration": "允许用户注册",
+      "allowRegistrationDesc": "禁用后，新用户无法注册，注册链接将被隐藏",
+      "registrationEnabled": "注册已开启",
+      "registrationEnabledDesc": "新用户现在可以注册账号",
+      "registrationDisabled": "注册已关闭",
+      "registrationDisabledDesc": "新用户注册功能已禁用",
+      "registrationUpdateFailed": "更新注册设置失败"
     }
   },
   "videoTools": {

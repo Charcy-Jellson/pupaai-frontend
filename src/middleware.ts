@@ -1,7 +1,7 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import createIntlMiddleware from "next-intl/middleware";
+import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
-import type { NextRequest } from "next/server";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -18,10 +18,57 @@ const isPublicRoute = createRouteMatcher([
   "/api(.*)",
 ]);
 
+// Check if the route is a sign-up route
+const isSignUpRoute = (pathname: string) => {
+  return pathname.includes("/sign-up");
+};
+
 // Routes that should skip i18n middleware (API routes, static files)
 const isApiRoute = (pathname: string) => {
   return pathname.startsWith("/api/") || pathname.startsWith("/_next/");
 };
+
+// Check if registration is enabled by querying the database directly
+// We use direct Supabase query to avoid circular API calls
+async function checkRegistrationEnabled(): Promise<boolean> {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      // If environment variables are not set, default to enabled
+      return true;
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/system_settings?key=eq.registration_enabled&select=value`,
+      {
+        headers: {
+          "apikey": supabaseKey,
+          "Authorization": `Bearer ${supabaseKey}`,
+        },
+        // Cache for 60 seconds to reduce database calls
+        next: { revalidate: 60 },
+      }
+    );
+
+    if (!response.ok) {
+      return true; // Default to enabled on error
+    }
+
+    const data = await response.json();
+    
+    if (!data || data.length === 0) {
+      return true; // Default to enabled if setting doesn't exist
+    }
+
+    const value = data[0]?.value;
+    return value === true || value === "true";
+  } catch (error) {
+    console.error("Error checking registration status:", error);
+    return true; // Default to enabled on error
+  }
+}
 
 export default clerkMiddleware(async (auth, req: NextRequest) => {
   const { pathname } = req.nextUrl;
@@ -34,6 +81,21 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
     }
     // API routes don't need protection for frontend-to-API calls
     return;
+  }
+
+  // Check if trying to access sign-up page
+  if (isSignUpRoute(pathname)) {
+    const registrationEnabled = await checkRegistrationEnabled();
+    
+    if (!registrationEnabled) {
+      // Extract locale from pathname (e.g., /en/sign-up -> en)
+      const localeMatch = pathname.match(/^\/([a-z]{2})\//);
+      const locale = localeMatch ? localeMatch[1] : "en";
+      
+      // Redirect to sign-in page
+      const signInUrl = new URL(`/${locale}/sign-in`, req.url);
+      return NextResponse.redirect(signInUrl);
+    }
   }
 
   // Handle internationalization for non-API routes

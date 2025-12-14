@@ -42,7 +42,7 @@ interface ToolPanelProps {
   onRotate: (degrees: number) => void;
   onResize: (width: number, height: number) => void;
   onCompress: (targetSizeKB: number) => Promise<{ originalSize: number; finalSize: number; quality: number }>;
-  onExtractLogo: (modelId?: string) => void;
+  onExtractLogo: (modelId?: string, removeBackground?: boolean) => void;
   onRemoveBackground: (modelId?: string) => void;
   onRemoveLogo: (modelId?: string) => void;
   onPreviewRotation?: (degrees: number) => void;
@@ -66,6 +66,7 @@ export function ToolPanel({
   const tc = useTranslations("common");
   const [rotationAngle, setRotationAngle] = useState(0);
   const [isPreviewingRotation, setIsPreviewingRotation] = useState(false);
+  const [extractLogoRemoveBg, setExtractLogoRemoveBg] = useState(true);
   const [resizeWidth, setResizeWidth] = useState("");
   const [resizeHeight, setResizeHeight] = useState("");
   const [targetSizeKB, setTargetSizeKB] = useState("500");
@@ -566,25 +567,56 @@ export function ToolPanel({
               </div>
             </Button>
 
-            <Button
-              variant="outline"
-              className={cn(
-                "w-full justify-start gap-3 h-auto py-3",
-                "hover:bg-violet-500/10 hover:border-violet-500/30"
-              )}
-              onClick={() => onExtractLogo(getModelIdToUse())}
-              disabled={!hasImage || isProcessing}
-            >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center">
-                <Scissors className="w-4 h-4 text-violet-400" />
-              </div>
-              <div className="text-left flex-1">
-                <div className="font-medium">{t("tools.extractLogo")}</div>
-                <div className="text-xs text-muted-foreground">
-                  {t("isolateLogoFromImage")}
+            {/* Extract Logo with background option */}
+            <div className="space-y-2">
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start gap-3 h-auto py-3",
+                  "hover:bg-violet-500/10 hover:border-violet-500/30"
+                )}
+                onClick={() => onExtractLogo(getModelIdToUse(), extractLogoRemoveBg)}
+                disabled={!hasImage || isProcessing}
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center">
+                  <Scissors className="w-4 h-4 text-violet-400" />
                 </div>
+                <div className="text-left flex-1">
+                  <div className="font-medium">{t("tools.extractLogo")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("isolateLogoFromImage")}
+                  </div>
+                </div>
+              </Button>
+              
+              {/* Background removal option */}
+              <div className="ml-11 space-y-1">
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="extractLogoBg"
+                    checked={extractLogoRemoveBg}
+                    onChange={() => setExtractLogoRemoveBg(true)}
+                    className="w-3.5 h-3.5 text-violet-500 focus:ring-violet-500 focus:ring-offset-0"
+                  />
+                  <span className="text-xs text-muted-foreground group-hover:text-white transition-colors">
+                    {t("extractLogoOptions.removeBackground")}
+                  </span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer group">
+                  <input
+                    type="radio"
+                    name="extractLogoBg"
+                    checked={!extractLogoRemoveBg}
+                    onChange={() => setExtractLogoRemoveBg(false)}
+                    className="w-3.5 h-3.5 text-violet-500 focus:ring-violet-500 focus:ring-offset-0"
+                  />
+                  <span className="text-xs text-muted-foreground group-hover:text-white transition-colors">
+                    {t("extractLogoOptions.keepBackground")}
+                  </span>
+                </label>
               </div>
-            </Button>
+            </div>
 
             <Button
               variant="outline"

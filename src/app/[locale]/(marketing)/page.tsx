@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/routing";
+import { useRegistrationEnabled } from "@/hooks";
 import { 
   Sparkles, 
   Wand2, 
@@ -308,6 +309,7 @@ export default function HomePage() {
   const t = useTranslations();
   const [showIntro, setShowIntro] = useState(true);
   const [introComplete, setIntroComplete] = useState(false);
+  const { registrationEnabled } = useRegistrationEnabled();
 
   const features = [
     {
@@ -415,17 +417,28 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link href="/sign-up">
-                <Button variant="gradient" size="xl" className="group">
-                  {t("common.getStarted")}
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link href="/sign-in">
-                <Button variant="outline" size="xl">
-                  {t("common.signIn")}
-                </Button>
-              </Link>
+              {registrationEnabled ? (
+                <Link href="/sign-up">
+                  <Button variant="gradient" size="xl" className="group">
+                    {t("common.getStarted")}
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              ) : (
+                <Link href="/sign-in">
+                  <Button variant="gradient" size="xl" className="group">
+                    {t("common.signIn")}
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+              )}
+              {registrationEnabled && (
+                <Link href="/sign-in">
+                  <Button variant="outline" size="xl">
+                    {t("common.signIn")}
+                  </Button>
+                </Link>
+              )}
             </div>
           </motion.div>
         </div>
@@ -504,9 +517,9 @@ export default function HomePage() {
               <p className="text-lg text-muted-foreground mb-8 max-w-xl mx-auto">
                 {t("home.ctaSubtitle")}
               </p>
-              <Link href="/sign-up">
+              <Link href={registrationEnabled ? "/sign-up" : "/sign-in"}>
                 <Button variant="gradient" size="xl" className="group">
-                  {t("home.ctaStart")}
+                  {registrationEnabled ? t("home.ctaStart") : t("common.signIn")}
                   <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>

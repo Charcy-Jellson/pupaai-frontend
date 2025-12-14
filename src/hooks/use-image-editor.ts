@@ -301,20 +301,20 @@ export function useImageEditor() {
     [state.currentImage, addOperation]
   );
 
-  const extractLogo = useCallback(async (modelId?: string) => {
+  const extractLogo = useCallback(async (modelId?: string, removeBackground: boolean = true) => {
     if (!state.currentImage) return;
 
     setState((prev) => ({ ...prev, isProcessing: true }));
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.extractLogo(base64Data, state.mimeType, modelId);
+      const response = await api.extractLogo(base64Data, state.mimeType, modelId, removeBackground);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
         addOperation({
           type: "extract-logo",
-          params: { modelId: modelId || "default" },
+          params: { modelId: modelId || "default", removeBackground },
           resultUrl,
         });
       } else {

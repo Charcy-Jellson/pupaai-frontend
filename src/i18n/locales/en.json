@@ -201,7 +201,37 @@
     "rotateRight": "Rotate Right",
     "applyRotation": "Apply Rotation",
     "cancelRotation": "Cancel",
-    "resizeImage": "Resize Image"
+    "resizeImage": "Resize Image",
+    "zoomDisabledWhileCropping": "Zoom is disabled while cropping",
+    "dropImagesHere": "Drop your images here",
+    "dragDropMultiple": "Drag and drop your images here",
+    "clickToBrowseMultiple": "or click to browse multiple files from your computer",
+    "extractLogoOptions": {
+      "removeBackground": "Remove background (transparent)",
+      "keepBackground": "Keep background (white)"
+    },
+    "multiImage": {
+      "images": "Images",
+      "selected": "{count} selected",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "clearAll": "Clear All",
+      "addMore": "Add More",
+      "addMoreTitle": "Add More Images",
+      "addMoreDescription": "Upload new images or select from your gallery to add to the current batch.",
+      "selectedSummary": "{count} image(s) selected for batch operations",
+      "clearSelection": "Clear Selection",
+      "processing": "Processing images...",
+      "cropMode": "Crop Mode",
+      "operateOnSelected": "Operations will apply to {count} selected image(s)",
+      "selectToOperate": "Select images to apply batch operations",
+      "saveImages": "Save {count} Image(s)",
+      "saveDescription": "Save {count} selected image(s) to your gallery.",
+      "saveSuccess": "Images Saved",
+      "savedCount": "Saved {count} image(s) to \"{folder}\".",
+      "saveCount": "Save {count} Image(s)",
+      "downloadStarted": "Downloading {count} image(s)..."
+    }
   },
   "productMockup": {
     "title": "Product Mockup",
@@ -577,7 +607,15 @@
       "description": "Description",
       "feature": "Feature",
       "selectDefault": "Select Default",
-      "noModels": "No models configured"
+      "noModels": "No models configured",
+      "general": "General",
+      "allowRegistration": "Allow User Registration",
+      "allowRegistrationDesc": "When disabled, new users cannot sign up and registration links are hidden",
+      "registrationEnabled": "Registration Enabled",
+      "registrationEnabledDesc": "New users can now sign up for accounts",
+      "registrationDisabled": "Registration Disabled",
+      "registrationDisabledDesc": "New user registration has been disabled",
+      "registrationUpdateFailed": "Failed to update registration settings"
     }
   },
   "videoTools": {

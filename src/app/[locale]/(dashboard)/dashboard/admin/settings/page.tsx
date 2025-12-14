@@ -53,7 +53,8 @@ import {
   Trash2,
   Image,
   Video,
-  FileText
+  FileText,
+  UserPlus
 } from "lucide-react";
 import * as api from "@/lib/api";
 import type { AIModel, TaskType, ProviderType, DefaultModelSetting } from "@/lib/api";
@@ -113,6 +114,11 @@ export default function AdminSettingsPage() {
     is_active: true,
   });
 
+  // Registration settings state
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [isRegistrationLoading, setIsRegistrationLoading] = useState(true);
+  const [isRegistrationSaving, setIsRegistrationSaving] = useState(false);
+
   // Close dialogs when route changes to prevent overlay from getting stuck
   useEffect(() => {
     setIsAddDialogOpen(false);
@@ -121,6 +127,7 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     loadData();
+    loadRegistrationSettings();
   }, []);
 
   const loadData = async () => {
@@ -151,6 +158,50 @@ export default function AdminSettingsPage() {
       });
     }
     setIsLoading(false);
+  };
+
+  const loadRegistrationSettings = async () => {
+    setIsRegistrationLoading(true);
+    try {
+      const response = await fetch("/api/settings/system");
+      if (response.ok) {
+        const data = await response.json();
+        setRegistrationEnabled(data.registration_enabled);
+      }
+    } catch (error) {
+      console.error("Failed to load registration settings:", error);
+    }
+    setIsRegistrationLoading(false);
+  };
+
+  const handleToggleRegistration = async (enabled: boolean) => {
+    setIsRegistrationSaving(true);
+    try {
+      const response = await fetch("/api/settings/system", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registration_enabled: enabled }),
+      });
+      
+      if (response.ok) {
+        setRegistrationEnabled(enabled);
+        toast({
+          title: enabled ? t("registrationEnabled") : t("registrationDisabled"),
+          description: enabled 
+            ? t("registrationEnabledDesc") 
+            : t("registrationDisabledDesc"),
+        });
+      } else {
+        throw new Error("Failed to update");
+      }
+    } catch (error) {
+      toast({
+        title: tc("error"),
+        description: t("registrationUpdateFailed"),
+        variant: "destructive",
+      });
+    }
+    setIsRegistrationSaving(false);
   };
 
   const handleAddModel = async () => {
@@ -572,13 +623,37 @@ export default function AdminSettingsPage() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <Globe className="w-4 h-4 text-violet-400" />
-                General
+                {t("general")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                System preferences coming soon
-              </p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <UserPlus className="w-4 h-4 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm">{t("allowRegistration")}</Label>
+                    <p className="text-xs text-muted-foreground">
+                      {t("allowRegistrationDesc")}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isRegistrationLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <>
+                      {isRegistrationSaving && (
+                        <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                      )}
+                      <Switch
+                        checked={registrationEnabled}
+                        onCheckedChange={handleToggleRegistration}
+                        disabled={isRegistrationSaving}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

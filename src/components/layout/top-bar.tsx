@@ -10,11 +10,13 @@ import { Menu, X, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "@/i18n/routing";
 import { LanguageSwitcher } from "@/components/common/language-switcher";
+import { useRegistrationEnabled } from "@/hooks";
 
 export function TopBar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
   const t = useTranslations();
+  const { registrationEnabled } = useRegistrationEnabled();
 
   const navigation = [
     { name: t("nav.features"), href: "/#features" },
@@ -70,11 +72,13 @@ export function TopBar() {
                   {t("common.signIn")}
                 </Button>
               </Link>
-              <Link href="/sign-up">
-                <Button variant="gradient" size="sm">
-                  {t("common.getStarted")}
-                </Button>
-              </Link>
+              {registrationEnabled && (
+                <Link href="/sign-up">
+                  <Button variant="gradient" size="sm">
+                    {t("common.getStarted")}
+                  </Button>
+                </Link>
+              )}
             </SignedOut>
 
             <SignedIn>

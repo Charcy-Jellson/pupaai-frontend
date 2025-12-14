@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { useImageEditor } from "@/hooks/use-image-editor";
+import { useMultiImageEditor } from "@/hooks/use-multi-image-editor";
 import { useUserRole } from "@/hooks/use-user-role";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -18,13 +18,15 @@ import {
 import { ImageUploader } from "@/components/image-tools/image-uploader";
 import { ImagePreview } from "@/components/image-tools/image-preview";
 import { ToolPanel } from "@/components/image-tools/tool-panel";
-import { OperationHistory } from "@/components/image-tools/operation-history";
+import { MultiImageGrid } from "@/components/image-tools/multi-image-grid";
 import { SavedImagesGallery } from "@/components/image-tools/saved-images-gallery";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { 
   Select,
   SelectContent,
@@ -41,35 +43,55 @@ import {
   Trash2,
   ImageIcon,
   Folder,
-  Plus
+  Plus,
+  ArrowLeft,
+  Loader2
 } from "lucide-react";
 
 export default function ImageToolsPage() {
   const { user } = useUser();
   const { toast } = useToast();
-  const editor = useImageEditor();
+  const editor = useMultiImageEditor();
   const { role } = useUserRole();
   const pathname = usePathname();
   const t = useTranslations("imageTools");
   const tc = useTranslations("common");
   const isAdmin = role === "admin";
+  
   const [activeTab, setActiveTab] = useState<"upload" | "gallery">("upload");
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [fileName, setFileName] = useState("");
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [folders, setFolders] = useState<FolderRecord[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [previewRotation, setPreviewRotation] = useState(0);
   
+  // Batch operation progress
+  const [batchProgress, setBatchProgress] = useState({ completed: 0, total: 0, active: false });
+  
   // New folder creation
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  
+  // Extract logo options
+  const [extractLogoRemoveBg, setExtractLogoRemoveBg] = useState(true);
+  
+  // Add More Dialog
+  const [addMoreDialogOpen, setAddMoreDialogOpen] = useState(false);
+  const [addMoreTab, setAddMoreTab] = useState<"upload" | "gallery">("upload");
 
-  // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
+  // Get derived state
+  const selectedImages = editor.getSelectedImages();
+  const activeImage = editor.getActiveImage();
+  const hasImages = editor.state.images.length > 0;
+  const hasSelectedImages = selectedImages.length > 0;
+  const isInCropMode = activeImage !== null;
+
+  // Close dialogs when route changes
   useEffect(() => {
     setSaveDialogOpen(false);
     setShowNewFolderInput(false);
+    setAddMoreDialogOpen(false);
   }, [pathname]);
 
   // Load user folders
@@ -110,28 +132,43 @@ export default function ImageToolsPage() {
     setIsCreatingFolder(false);
   };
 
-  const handleFileSelect = useCallback((file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string;
-      editor.setImage(result, file.type);
-      setFileName(file.name.replace(/\.[^/.]+$/, ""));
-    };
-    reader.readAsDataURL(file);
+  // Handle multi-file upload
+  const handleFilesSelect = useCallback((files: File[]) => {
+    editor.addImages(files);
+  }, [editor]);
+  
+  // Handle multi-file upload from Add More dialog
+  const handleAddMoreFilesSelect = useCallback((files: File[]) => {
+    editor.addImages(files);
+    setAddMoreDialogOpen(false);
   }, [editor]);
 
+  // Handle gallery select (adds single image)
   const handleGallerySelect = useCallback((imageUrl: string, imageName: string) => {
     fetch(imageUrl)
       .then((res) => res.blob())
       .then((blob) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const result = e.target?.result as string;
-          editor.setImage(result, blob.type || "image/png");
-          setFileName(imageName.replace(/\.[^/.]+$/, ""));
-          setActiveTab("upload");
-        };
-        reader.readAsDataURL(blob);
+        const file = new File([blob], imageName, { type: blob.type || "image/png" });
+        editor.addImages([file]);
+        setActiveTab("upload");
+      })
+      .catch(() => {
+        toast({
+          title: "Error",
+          description: "Failed to load image from gallery",
+          variant: "destructive",
+        });
+      });
+  }, [editor, toast]);
+  
+  // Handle gallery select from Add More dialog
+  const handleAddMoreGallerySelect = useCallback((imageUrl: string, imageName: string) => {
+    fetch(imageUrl)
+      .then((res) => res.blob())
+      .then((blob) => {
+        const file = new File([blob], imageName, { type: blob.type || "image/png" });
+        editor.addImages([file]);
+        setAddMoreDialogOpen(false);
       })
       .catch(() => {
         toast({
@@ -142,53 +179,46 @@ export default function ImageToolsPage() {
       });
   }, [editor, toast]);
 
-  const handleSave = async () => {
-    if (!user || !editor.state.currentImage) return;
+  // Save selected images
+  const handleSaveSelected = async () => {
+    if (!user || selectedImages.length === 0) return;
 
     setIsSaving(true);
+    let savedCount = 0;
+
     try {
-      // Convert data URL to blob
-      const response = await fetch(editor.state.currentImage);
-      const blob = await response.blob();
-      
-      // Create file from blob
-      const extension = editor.state.mimeType.split("/")[1] || "png";
-      const finalFileName = `${fileName || "image"}.${extension}`;
-      const file = new File([blob], finalFileName, {
-        type: editor.state.mimeType,
-      });
+      for (const img of selectedImages) {
+        const response = await fetch(img.currentImage);
+        const blob = await response.blob();
+        
+        const extension = img.mimeType.split("/")[1] || "png";
+        const finalFileName = `${img.fileName || "image"}.${extension}`;
+        const file = new File([blob], finalFileName, { type: img.mimeType });
 
-      // Get image dimensions
-      const dimensions = await getImageDimensions(file);
+        const dimensions = await getImageDimensions(file);
+        const result = await saveFile(user.id, file, selectedFolderId, finalFileName, dimensions);
 
-      // Save to Supabase with folder
-      const result = await saveFile(
-        user.id, 
-        file, 
-        selectedFolderId,
-        finalFileName,
-        dimensions
-      );
+        if (result) {
+          savedCount++;
+        }
+      }
 
-      if (result) {
+      if (savedCount > 0) {
         const folderName = selectedFolderId 
           ? folders.find(f => f.id === selectedFolderId)?.name || "folder"
           : "root";
         toast({
-          title: "Image Saved",
-          description: `Your image has been saved to "${folderName}".`,
+          title: t("multiImage.saveSuccess"),
+          description: t("multiImage.savedCount", { count: savedCount, folder: folderName }),
         });
         setSaveDialogOpen(false);
-        setFileName("");
         setSelectedFolderId(null);
-      } else {
-        throw new Error("Failed to save image");
       }
     } catch (error) {
       console.error("Save error:", error);
       toast({
-        title: "Error",
-        description: "Failed to save image. Please check your Supabase configuration.",
+        title: tc("error"),
+        description: "Failed to save images.",
         variant: "destructive",
       });
     } finally {
@@ -196,12 +226,57 @@ export default function ImageToolsPage() {
     }
   };
 
-  const handleDownload = () => {
-    editor.downloadImage(fileName || "edited-image");
+  // Download selected images
+  const handleDownloadSelected = () => {
+    editor.downloadSelectedImages();
     toast({
-      title: "Download Started",
-      description: "Your image is being downloaded.",
+      title: tc("download"),
+      description: t("multiImage.downloadStarted", { count: selectedImages.length }),
     });
+  };
+
+  // Batch operation handlers with progress
+  const handleBatchRotate = async (degrees: number) => {
+    await editor.batchRotate(degrees);
+    setPreviewRotation(0);
+  };
+
+  const handleBatchResize = async (width: number, height: number) => {
+    await editor.batchResize(width, height);
+  };
+
+  const handleBatchCompress = async (targetSizeKB: number) => {
+    await editor.batchCompress(targetSizeKB);
+    return { originalSize: 0, finalSize: 0, quality: 0 }; // Simplified for batch
+  };
+
+  const handleBatchRemoveBackground = async (modelId?: string) => {
+    setBatchProgress({ completed: 0, total: selectedImages.length, active: true });
+    await editor.batchRemoveBackground(modelId, (completed, total) => {
+      setBatchProgress({ completed, total, active: true });
+    });
+    setBatchProgress({ completed: 0, total: 0, active: false });
+  };
+
+  const handleBatchExtractLogo = async (modelId?: string, removeBackground?: boolean) => {
+    setBatchProgress({ completed: 0, total: selectedImages.length, active: true });
+    await editor.batchExtractLogo(modelId, removeBackground ?? extractLogoRemoveBg, (completed, total) => {
+      setBatchProgress({ completed, total, active: true });
+    });
+    setBatchProgress({ completed: 0, total: 0, active: false });
+  };
+
+  const handleBatchRemoveLogo = async (modelId?: string) => {
+    setBatchProgress({ completed: 0, total: selectedImages.length, active: true });
+    await editor.batchRemoveLogo(modelId, (completed, total) => {
+      setBatchProgress({ completed, total, active: true });
+    });
+    setBatchProgress({ completed: 0, total: 0, active: false });
+  };
+
+  // Exit crop mode
+  const handleExitCropMode = () => {
+    editor.setActiveImage(null);
   };
 
   return (
@@ -220,43 +295,73 @@ export default function ImageToolsPage() {
           </p>
         </div>
 
-        {editor.state.currentImage && (
+        {hasImages && (
           <div className="flex items-center gap-2">
+            {hasSelectedImages && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleDownloadSelected}
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {tc("download")} ({selectedImages.length})
+                </Button>
+                <Button
+                  variant="gradient"
+                  size="sm"
+                  onClick={() => setSaveDialogOpen(true)}
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  {t("saveToGallery")} ({selectedImages.length})
+                </Button>
+              </>
+            )}
             <Button
-              variant="outline"
+              variant="ghost"
               size="sm"
-              onClick={() => editor.resetToOriginal()}
-              disabled={editor.state.operations.length === 0}
+              onClick={() => editor.clearAllImages()}
+              className="text-muted-foreground hover:text-destructive"
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              {t("reset")}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {tc("download")}
-            </Button>
-            <Button
-              variant="gradient"
-              size="sm"
-              onClick={() => setSaveDialogOpen(true)}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {t("saveToGallery")}
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t("multiImage.clearAll")}
             </Button>
           </div>
         )}
       </div>
+
+      {/* Batch Progress Indicator */}
+      {batchProgress.active && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-lg bg-violet-500/10 border border-violet-500/20"
+        >
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+              <span className="text-sm text-violet-300">
+                {t("multiImage.processing")}
+              </span>
+            </div>
+            <span className="text-sm text-violet-400">
+              {batchProgress.completed} / {batchProgress.total}
+            </span>
+          </div>
+          <Progress 
+            value={(batchProgress.completed / batchProgress.total) * 100} 
+            className="h-2"
+          />
+        </motion.div>
+      )}
 
       {/* Main Content */}
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Left: Image Area */}
         <div className="lg:col-span-2 space-y-6">
           <AnimatePresence mode="wait">
-            {!editor.state.currentImage ? (
+            {!hasImages ? (
+              // Upload Section
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -276,7 +381,10 @@ export default function ImageToolsPage() {
                   </TabsList>
 
                   <TabsContent value="upload" className="m-0">
-                    <ImageUploader onFileSelect={handleFileSelect} />
+                    <ImageUploader 
+                      onFilesSelect={handleFilesSelect}
+                      multiple={true}
+                    />
                   </TabsContent>
 
                   <TabsContent value="gallery" className="m-0">
@@ -287,65 +395,101 @@ export default function ImageToolsPage() {
                   </TabsContent>
                 </Tabs>
               </motion.div>
-            ) : (
+            ) : isInCropMode && activeImage ? (
+              // Crop Mode - Single Image View
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                key="preview-section"
+                key="crop-section"
                 className="space-y-4"
               >
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-white">{t("preview")}</h2>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => editor.clearImage()}
-                    className="text-muted-foreground hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t("clearImage")}
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleExitCropMode}
+                    >
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      {tc("back")}
+                    </Button>
+                    <h2 className="text-lg font-semibold text-white">
+                      {t("multiImage.cropMode")}
+                    </h2>
+                    <Badge variant="outline">{activeImage.fileName}</Badge>
+                  </div>
                 </div>
                 <ImagePreview
-                  imageUrl={editor.state.currentImage}
-                  isProcessing={editor.state.isProcessing}
-                  onCrop={editor.cropImage}
+                  imageUrl={activeImage.currentImage}
+                  isProcessing={activeImage.isProcessing}
+                  onCrop={(x, y, width, height) => {
+                    editor.cropActiveImage(x, y, width, height);
+                  }}
                   previewRotation={previewRotation}
+                />
+              </motion.div>
+            ) : (
+              // Multi-Image Grid View
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                key="grid-section"
+                className="space-y-4"
+              >
+                {/* Add More Images Button */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold text-white">{t("preview")}</h2>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAddMoreDialogOpen(true)}
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {t("multiImage.addMore")}
+                  </Button>
+                </div>
+
+                <MultiImageGrid
+                  images={editor.state.images}
+                  activeImageId={editor.state.activeImageId}
+                  onToggleSelection={editor.toggleImageSelection}
+                  onSelectAll={editor.selectAllImages}
+                  onDeselectAll={editor.deselectAllImages}
+                  onSetActiveImage={editor.setActiveImage}
+                  onUndoImage={editor.undoImageOperation}
+                  onResetImage={editor.resetImage}
+                  onRemoveImage={editor.removeImage}
                 />
               </motion.div>
             )}
           </AnimatePresence>
-
-          {/* Operation History */}
-          {editor.state.operations.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <OperationHistory
-                operations={editor.state.operations}
-                onUndo={editor.undoLastOperation}
-              />
-            </motion.div>
-          )}
         </div>
 
         {/* Right: Tool Panel */}
         <div className="space-y-6">
+          {/* Info about selection */}
+          {hasImages && !isInCropMode && (
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/50">
+              <p className="text-xs text-muted-foreground">
+                {hasSelectedImages 
+                  ? t("multiImage.operateOnSelected", { count: selectedImages.length })
+                  : t("multiImage.selectToOperate")}
+              </p>
+            </div>
+          )}
+
           <ToolPanel
-            hasImage={!!editor.state.currentImage}
-            isProcessing={editor.state.isProcessing}
+            hasImage={hasSelectedImages || isInCropMode}
+            isProcessing={editor.state.globalProcessing}
             isAdmin={isAdmin}
-            onRotate={(degrees) => {
-              editor.rotateImage(degrees);
-              setPreviewRotation(0);
-            }}
-            onResize={editor.resizeImage}
-            onCompress={editor.compressImage}
-            onExtractLogo={(modelId) => editor.extractLogo(modelId)}
-            onRemoveBackground={(modelId) => editor.removeBackground(modelId)}
-            onRemoveLogo={(modelId) => editor.removeLogo(modelId)}
+            onRotate={handleBatchRotate}
+            onResize={handleBatchResize}
+            onCompress={handleBatchCompress}
+            onExtractLogo={handleBatchExtractLogo}
+            onRemoveBackground={handleBatchRemoveBackground}
+            onRemoveLogo={handleBatchRemoveLogo}
             onPreviewRotation={setPreviewRotation}
             onCancelPreview={() => setPreviewRotation(0)}
           />
@@ -358,23 +502,13 @@ export default function ImageToolsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Save className="w-5 h-5 text-violet-400" />
-              {t("saveImage")}
+              {t("multiImage.saveImages", { count: selectedImages.length })}
             </DialogTitle>
             <DialogDescription>
-              {t("saveImageDescription")}
+              {t("multiImage.saveDescription", { count: selectedImages.length })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="fileName">{t("fileName")}</Label>
-              <Input
-                id="fileName"
-                value={fileName}
-                onChange={(e) => setFileName(e.target.value)}
-                placeholder={t("enterFileName")}
-              />
-            </div>
-            
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
                 <Folder className="w-4 h-4" />
@@ -465,12 +599,65 @@ export default function ImageToolsPage() {
             </Button>
             <Button
               variant="gradient"
-              onClick={handleSave}
-              disabled={isSaving || !fileName.trim()}
+              onClick={handleSaveSelected}
+              disabled={isSaving || selectedImages.length === 0}
             >
-              {isSaving ? t("saving") : t("saveImage")}
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {t("saving")}
+                </>
+              ) : (
+                t("multiImage.saveCount", { count: selectedImages.length })
+              )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add More Dialog */}
+      <Dialog open={addMoreDialogOpen} onOpenChange={setAddMoreDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-5 h-5 text-violet-400" />
+              {t("multiImage.addMoreTitle")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("multiImage.addMoreDescription")}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Tabs 
+            value={addMoreTab} 
+            onValueChange={(v) => setAddMoreTab(v as "upload" | "gallery")}
+            className="flex-1 flex flex-col overflow-hidden"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="upload" className="flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                {t("uploadNew")}
+              </TabsTrigger>
+              <TabsTrigger value="gallery" className="flex items-center gap-2">
+                <FolderOpen className="w-4 h-4" />
+                {t("fromGallery")}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="upload" className="m-0 mt-4 flex-1">
+              <ImageUploader 
+                onFilesSelect={handleAddMoreFilesSelect}
+                multiple={true}
+              />
+            </TabsContent>
+
+            <TabsContent value="gallery" className="m-0 mt-4 flex-1 overflow-auto">
+              <SavedImagesGallery
+                userId={user?.id || ""}
+                onSelect={handleAddMoreGallerySelect}
+              />
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </div>
