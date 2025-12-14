@@ -297,82 +297,136 @@ export function ImageComparisonDemo() {
 
 
 // --- SEO Analysis Demo ---
+// Content is hardcoded in English (does not change with language)
 export function SeoAnalysisDemo() {
   const t = useTranslations("featureDemo.seo");
+  const [activeSection, setActiveSection] = useState(0);
   
-  const tags = [
-    { text: "#summer_vibes", score: 98, color: "text-emerald-400 border-emerald-500/30 bg-emerald-500/10" },
-    { text: "#fashion_2025", score: 95, color: "text-blue-400 border-blue-500/30 bg-blue-500/10" },
-    { text: "#must_have", score: 88, color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
-    { text: "#ootd", score: 82, color: "text-pink-400 border-pink-500/30 bg-pink-500/10" },
-    { text: "#gift_ideas", score: 75, color: "text-amber-400 border-amber-500/30 bg-amber-500/10" },
+  // Hardcoded English content - same for all languages
+  const sections = [
+    { 
+      icon: "🏷️", 
+      title: "Product Name",
+      content: "Power Hour Tailored Blazer Set – Effortless Executive Chic",
+      color: "from-amber-500/20 to-amber-500/5 border-amber-500/30"
+    },
+    { 
+      icon: "📝", 
+      title: "Description",
+      content: "Step into confidence, elegance, and quiet luxury. This tailored blazer and wide-leg trousers set is designed for modern women who want to look polished without trying too hard. Perfect for office, meetings, and work-to-dinner transitions.",
+      color: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/30"
+    },
+    { 
+      icon: "🎬", 
+      title: "POV Hook",
+      content: "POV: You walk into the meeting and everyone suddenly takes you seriously.",
+      color: "from-blue-500/20 to-blue-500/5 border-blue-500/30"
+    },
+    { 
+      icon: "#️⃣", 
+      title: "Hashtags",
+      content: "#workwear #officeoutfit #businesscasual #powerdressing #quietluxury #womeninbusiness #corporatefashion #elegantstyle #ceoenergy #outfitinspo",
+      color: "from-purple-500/20 to-purple-500/5 border-purple-500/30"
+    },
+    { 
+      icon: "🎥", 
+      title: "Video Prompt",
+      content: "Minimal boutique / clean fitting room. Soft natural light. Shot sequence: slow camera push-in → confidence pose → blazer adjustment → authority gaze. Music: calm luxury beats.",
+      color: "from-pink-500/20 to-pink-500/5 border-pink-500/30"
+    },
   ];
 
-  return (
-    <div className="w-full h-full bg-neutral-900/50 border border-white/10 rounded-xl p-6 relative overflow-hidden flex flex-col">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-violet-500/20 rounded-lg text-violet-400">
-            <TrendingUp className="w-5 h-5" />
-          </div>
-          <div>
-            <div className="text-sm font-medium text-white">{t("marketAnalysis")}</div>
-            <div className="text-xs text-gray-400">{t("realTimeInsights")}</div>
-          </div>
-        </div>
-        <div className="text-xs font-mono text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded">
-          <Globe2 className="w-3 h-3" /> {t("live")}
-        </div>
-      </div>
+  // Auto cycle through sections
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSection((prev) => (prev + 1) % sections.length);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, [sections.length]);
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {/* Score Card */}
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10">
-          <div className="text-xs text-gray-500 mb-1">{t("viralityScore")}</div>
-          <div className="text-3xl font-bold text-white flex items-end gap-2">
-            9.8
-            <span className="text-sm font-medium text-emerald-500 mb-1">+24%</span>
-          </div>
-          <div className="w-full h-1 bg-white/10 rounded-full mt-3 overflow-hidden">
+  return (
+    <div className="w-full h-full bg-neutral-900/50 border border-white/10 rounded-xl overflow-hidden">
+      <div className="grid md:grid-cols-2 h-full">
+        {/* Left: Product Image */}
+        <div className="p-6 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center justify-center bg-gradient-to-br from-emerald-500/5 to-transparent">
+          <div className="relative">
+            {/* Product image */}
+            <div className="w-36 h-48 rounded-xl bg-white/5 border-2 border-white/20 flex items-center justify-center mb-4 overflow-hidden shadow-xl">
+              <img 
+                src="/images/marketing/bg-1.png" 
+                alt="Product" 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden flex-col items-center text-white/40">
+                <span className="text-2xl mb-1">📷</span>
+                <span className="text-xs">{t("uploadProduct")}</span>
+              </div>
+            </div>
+            
+            {/* Scanning animation */}
             <motion.div 
-              initial={{ width: 0 }}
-              whileInView={{ width: "98%" }}
-              transition={{ duration: 1.5, ease: "easeOut" }}
-              className="h-full bg-gradient-to-r from-violet-500 to-emerald-500" 
+              className="absolute inset-0 bg-gradient-to-b from-emerald-500/30 to-transparent pointer-events-none rounded-xl"
+              animate={{ 
+                y: ["0%", "100%", "0%"],
+                opacity: [0.5, 0.2, 0.5]
+              }}
+              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
             />
           </div>
+          
+          <div className="text-center">
+            <div className="text-sm font-medium text-white mb-1">{t("aiAnalyzing")}</div>
+            <div className="text-xs text-gray-400">{t("generatingContent")}</div>
+          </div>
         </div>
 
-        {/* Region Card */}
-        <div className="p-4 rounded-xl bg-white/5 border border-white/10 relative overflow-hidden">
-           <div className="text-xs text-gray-500 mb-1">{t("topRegion")}</div>
-           <div className="flex items-center gap-2 mt-2">
-             <span className="text-2xl">🇺🇸</span>
-             <span className="text-white font-medium">{t("unitedStates")}</span>
-           </div>
-           <div className="absolute right-0 bottom-0 opacity-20">
-              <Globe2 className="w-16 h-16 text-white translate-x-4 translate-y-4" />
-           </div>
-        </div>
-      </div>
-
-      {/* Tags Cloud Animation */}
-      <div className="flex-1">
-        <div className="text-xs text-gray-500 mb-3 uppercase tracking-wider">{t("generatedKeywords")}</div>
-        <div className="flex flex-wrap gap-2">
-          {tags.map((tag, i) => (
-            <motion.div
-              key={tag.text}
-              initial={{ opacity: 0, scale: 0.8, y: 10 }}
-              whileInView={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: i * 0.15, type: "spring" }}
-              className={cn("px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5", tag.color)}
-            >
-              <Hash className="w-3 h-3 opacity-50" />
-              {tag.text}
-              <span className="opacity-50 ml-1 text-[10px]">{tag.score}</span>
-            </motion.div>
-          ))}
+        {/* Right: AI Generated Results */}
+        <div className="p-4 flex flex-col overflow-hidden">
+          <div className="text-xs text-emerald-400 font-medium mb-3 flex items-center gap-1">
+            <Wand2 className="w-3 h-3" />
+            {t("aiGenerated")}
+          </div>
+          
+          <div className="flex-1 space-y-1.5 overflow-y-auto">
+            {sections.map((section, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0.5, scale: 0.98 }}
+                animate={{ 
+                  opacity: activeSection === i ? 1 : 0.5,
+                  scale: activeSection === i ? 1 : 0.98,
+                }}
+                onClick={() => setActiveSection(i)}
+                className={cn(
+                  "p-2.5 rounded-lg border cursor-pointer transition-all duration-300",
+                  activeSection === i 
+                    ? `bg-gradient-to-r ${section.color}` 
+                    : "bg-white/5 border-white/10 hover:bg-white/10"
+                )}
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <span className="text-sm">{section.icon}</span>
+                  <span className="text-xs font-medium text-white">{section.title}</span>
+                </div>
+                <AnimatePresence mode="wait">
+                  {activeSection === i && (
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="text-xs text-gray-300 leading-relaxed"
+                    >
+                      {section.content}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
     </div>

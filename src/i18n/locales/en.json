@@ -767,13 +767,15 @@
       "virtualTryOn": "Virtual Try-On"
     },
     "seo": {
-      "marketAnalysis": "Market Analysis",
-      "realTimeInsights": "Real-time SEO Insights",
-      "live": "LIVE",
-      "viralityScore": "VIRALITY SCORE",
-      "topRegion": "TOP REGION",
-      "unitedStates": "United States",
-      "generatedKeywords": "Generated Keywords",
+      "uploadProduct": "Upload Product",
+      "aiAnalyzing": "AI Analyzing...",
+      "generatingContent": "Generating viral content",
+      "aiGenerated": "AI Generated Results",
+      "productName": "Product Name",
+      "description": "Product Description",
+      "povCopy": "POV Hook",
+      "hashtags": "Trending Hashtags",
+      "videoSuggestion": "Video Shooting Tips",
       "viralHashtag": "Viral Hashtag Generation",
       "competitorPov": "Competitor POV Analysis",
       "localizedDesc": "Localized Description Optimization"

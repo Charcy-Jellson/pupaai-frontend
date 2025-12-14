@@ -509,13 +509,36 @@ export function useMultiImageEditor() {
   // Download all selected images
   const downloadSelectedImages = useCallback(() => {
     const selectedImages = state.images.filter((img) => img.isSelected);
+    
     selectedImages.forEach((img, index) => {
-      const link = document.createElement("a");
-      const extension = img.mimeType.split("/")[1] || "png";
-      link.download = `${img.fileName || `image-${index + 1}`}.${extension}`;
-      link.href = img.currentImage;
-      // Delay each download slightly to avoid browser blocking
-      setTimeout(() => link.click(), index * 100);
+      setTimeout(() => {
+        try {
+          // Convert base64 to Blob for reliable download
+          const base64Data = img.currentImage.split(",")[1];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: img.mimeType });
+          
+          // Create download link
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          const extension = img.mimeType.split("/")[1] || "png";
+          link.href = url;
+          link.download = `${img.fileName || `image-${index + 1}`}.${extension}`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up blob URL after download
+          setTimeout(() => URL.revokeObjectURL(url), 100);
+        } catch (error) {
+          console.error(`Failed to download image ${index + 1}:`, error);
+        }
+      }, index * 200); // Delay each download to avoid browser blocking
     });
   }, [state.images]);
 

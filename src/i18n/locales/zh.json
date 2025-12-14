@@ -99,7 +99,7 @@
       "description": "AI 驱动的 SEO 优化和产品分析工具。",
       "analysis": {
         "title": "全链路数据分析",
-        "description": "上传产品图，一键生成爆款 Description、POV 文案、Hashtags 及视频拍摄建议。"
+        "description": "上传产品图，一键生成爆款 产品名称、描述、POV 文案、标签 及视频拍摄建议。"
       }
     },
     "imageTools": {
@@ -767,13 +767,15 @@
       "virtualTryOn": "虚拟试穿"
     },
     "seo": {
-      "marketAnalysis": "市场分析",
-      "realTimeInsights": "实时 SEO 洞察",
-      "live": "实时",
-      "viralityScore": "病毒传播指数",
-      "topRegion": "热门地区",
-      "unitedStates": "美国",
-      "generatedKeywords": "生成的关键词",
+      "uploadProduct": "上传产品图",
+      "aiAnalyzing": "AI 分析中...",
+      "generatingContent": "正在生成爆款内容",
+      "aiGenerated": "AI 生成结果",
+      "productName": "产品名称",
+      "description": "产品描述",
+      "povCopy": "POV 文案",
+      "hashtags": "热门标签",
+      "videoSuggestion": "视频拍摄建议",
       "viralHashtag": "爆款标签生成",
       "competitorPov": "竞品视角分析",
       "localizedDesc": "本地化描述优化"
