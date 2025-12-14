@@ -20,11 +20,11 @@ export function VideoGenerationDemo() {
   
   const steps = [t("step1"), t("step2"), t("step3"), t("step4")];
   
-  // Simulation of different "scenes" or "models"
+  // Different market video demos
   const scenes = [
-    { color: "from-orange-400 to-rose-500", label: t("usMarket"), icon: "🇺🇸" },
-    { color: "from-blue-400 to-cyan-500", label: t("euMarket"), icon: "🇪🇺" },
-    { color: "from-emerald-400 to-teal-500", label: t("seaMarket"), icon: "🌏" },
+    { image: "/images/marketing/us_video_demo.png", label: t("usMarket"), icon: "🇺🇸" },
+    { image: "/images/marketing/eu_video_demo.png", label: t("euMarket"), icon: "🇪🇺" },
+    { image: "/images/marketing/as_video_demo.png", label: t("seaMarket"), icon: "🌏" },
   ];
   
   const [currentScene, setCurrentScene] = useState(0);
@@ -76,26 +76,26 @@ export function VideoGenerationDemo() {
 
       {/* Right: Preview Player */}
       <div className="w-full md:w-1/2 relative bg-black flex items-center justify-center overflow-hidden">
-        {/* Animated Background Content */}
+        {/* Video Demo Image */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentScene}
-            initial={{ opacity: 0, scale: 1.1 }}
+            initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className={cn(
-              "absolute inset-0 bg-gradient-to-br",
-              scenes[currentScene].color
-            )}
+            transition={{ duration: 0.6 }}
+            className="absolute inset-0"
           >
-            <div className="absolute inset-0 flex items-center justify-center">
-              {/* Abstract "Product" or "Person" representation */}
-              <div className="w-32 h-48 bg-white/20 backdrop-blur-md rounded-2xl border border-white/30 shadow-xl flex items-center justify-center relative overflow-hidden">
-                 <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent animate-[shimmer_2s_infinite]" />
-                 <span className="text-4xl">{scenes[currentScene].icon}</span>
-              </div>
-            </div>
+            <img 
+              src={scenes[currentScene].image}
+              alt={scenes[currentScene].label}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                // Fallback to gradient if image fails to load
+                e.currentTarget.style.display = 'none';
+                e.currentTarget.parentElement!.classList.add('bg-gradient-to-br', 'from-violet-500', 'to-purple-600');
+              }}
+            />
           </motion.div>
         </AnimatePresence>
 

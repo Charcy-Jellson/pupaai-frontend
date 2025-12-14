@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/routing";
-import { Sparkles, Github, Twitter, Linkedin } from "lucide-react";
+import { Sparkles, Github, Twitter, Linkedin, Mail } from "lucide-react";
 
 const socialLinks = [
   { name: "GitHub", icon: Github, href: "https://github.com" },
@@ -53,9 +53,16 @@ export function Footer() {
                 Pupa<span className="text-gradient">AI</span>
               </span>
             </Link>
-            <p className="text-muted-foreground text-sm max-w-xs mb-6">
+            <p className="text-muted-foreground text-sm max-w-xs mb-4">
               {t("home.footerDescription")}
             </p>
+            <a 
+              href="mailto:admin@charcyjellson.com"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-white transition-colors mb-4"
+            >
+              <Mail className="w-4 h-4" />
+              admin@charcyjellson.com
+            </a>
             <div className="flex items-center gap-4">
               {socialLinks.map((social) => (
                 <a
