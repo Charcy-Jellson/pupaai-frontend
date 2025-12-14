@@ -95,6 +95,8 @@
       }
     },
     "seo": {
+      "badge": "Coming Soon",
+      "description": "AI-powered SEO optimization and product analysis tools.",
       "analysis": {
         "title": "Full-Funnel Data Analysis",
         "description": "Upload product images to instantly generate viral Descriptions, POV copy, Hashtags, and video shooting recommendations."

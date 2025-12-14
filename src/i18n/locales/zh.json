@@ -95,6 +95,8 @@
       }
     },
     "seo": {
+      "badge": "即将推出",
+      "description": "AI 驱动的 SEO 优化和产品分析工具。",
       "analysis": {
         "title": "全链路数据分析",
         "description": "上传产品图，一键生成爆款 Description、POV 文案、Hashtags 及视频拍摄建议。"
