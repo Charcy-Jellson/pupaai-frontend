@@ -51,16 +51,55 @@
     "title": "Pupa AI",
     "titleHighlight": "工作室",
     "subtitle": "您的 AI 驱动电商创意套件。利用尖端 AI 技术转换产品图片、生成样机和创建虚拟试穿。",
+    "heroTitle": "Pupa AI Studio",
+    "heroSubtitle": "您的全方位 AI 电商创意工坊",
+    "heroDescription": "从爆款视频生成到精美产品图，再到精准的 SEO 分析。Pupa AI 为您的跨境电商业务注入无限动力。",
     "ctaStart": "立即开始创作",
     "ctaLearn": "了解更多",
     "scrollDown": "向下滚动探索",
-    "featuresTitle": "完整的电商创意套件",
-    "featuresSubtitle": "创建令人惊艳的产品视觉效果并简化电商工作流程所需的一切。",
+    "featuresTitle": "全链路 AI 电商解决方案",
+    "featuresSubtitle": "三大核心板块，满足您从素材制作到营销推广的所有需求。",
     "ctaTitle": "准备好改变您的电商视觉效果了吗？",
     "ctaSubtitle": "加入数千家使用 Pupa AI Studio 创建专业产品图片的电商企业。",
     "footerDescription": "您的 AI 驱动电商创意套件。转换产品图片、生成样机和创建虚拟试穿。"
   },
   "features": {
+    "tabs": {
+      "video": "AI 视频工具",
+      "image": "AI 图像处理",
+      "seo": "SEO & GEO 分析"
+    },
+    "video": {
+      "generation": {
+        "title": "爆款视频生成",
+        "description": "根据产品图生成多国籍、多语种、多场景的本地化带货视频。支持开箱、穿搭、节日氛围等多种模版。"
+      },
+      "analysis": {
+        "title": "视频分析与 Prompt 生成",
+        "description": "深度拆解爆款视频特点，分析火爆原因并自动生成同款视频 Prompt。",
+        "badge": "Coming Soon"
+      }
+    },
+    "image": {
+      "model": {
+        "title": "AI 模特试穿",
+        "description": "生成不同种族、性别、身材、姿势的真实模特，完美展示产品上身效果。"
+      },
+      "product": {
+        "title": "AI 产品图优化",
+        "description": "批量换色、换材质、智能提取。快速生成高质量产品展示图。"
+      },
+      "scene": {
+        "title": "场景生成 & 重组",
+        "description": "保留场景换商品，或保留商品换场景。无限拓展产品的使用场景。"
+      }
+    },
+    "seo": {
+      "analysis": {
+        "title": "全链路数据分析",
+        "description": "上传产品图，一键生成爆款 Description、POV 文案、Hashtags 及视频拍摄建议。"
+      }
+    },
     "imageTools": {
       "title": "图像处理套件",
       "description": "裁剪、调整大小、旋转、压缩和增强产品图片。AI 驱动的背景移除、Logo 提取和水印去除。"
@@ -82,7 +121,7 @@
       "description": "即将推出：AI 驱动的视频编辑和产品视频生成，满足您的电商需求。",
       "badge": "即将推出"
     },
-    "seo": {
+    "seoDeprecated": {
       "title": "SEO 优化",
       "description": "即将推出：AI 驱动的 SEO 工具，优化您的产品列表并提高搜索排名。",
       "badge": "即将推出"
@@ -696,6 +735,47 @@
     "quickStart": "快速开始",
     "recentFiles": "最近文件",
     "noFiles": "暂无文件。开始创作吧！"
+  },
+  "featureDemo": {
+    "video": {
+      "pipeline": "AI 视频生成流程",
+      "step1": "分析产品中...",
+      "step2": "匹配达人中...",
+      "step3": "生成脚本中...",
+      "step4": "合成视频中...",
+      "targetAudience": "目标市场",
+      "usMarket": "美国市场 / 开箱",
+      "euMarket": "欧洲市场 / 生活方式",
+      "seaMarket": "东南亚市场 / 测评",
+      "aiGenerated": "AI 生成内容",
+      "likes": "1.2万",
+      "comments": "842",
+      "share": "分享"
+    },
+    "image": {
+      "original": "原图",
+      "aiGenerated": "AI 生成",
+      "rawInput": "原始输入",
+      "brandName": "VOGUE",
+      "backgroundReplacement": "背景替换",
+      "p1": "产品 1",
+      "p2": "产品 2",
+      "p3": "产品 3",
+      "multiEthnic": "多种族模特",
+      "virtualTryOn": "虚拟试穿"
+    },
+    "seo": {
+      "marketAnalysis": "市场分析",
+      "realTimeInsights": "实时 SEO 洞察",
+      "live": "实时",
+      "viralityScore": "病毒传播指数",
+      "topRegion": "热门地区",
+      "unitedStates": "美国",
+      "generatedKeywords": "生成的关键词",
+      "viralHashtag": "爆款标签生成",
+      "competitorPov": "竞品视角分析",
+      "localizedDesc": "本地化描述优化"
+    }
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. 保留所有权利。"

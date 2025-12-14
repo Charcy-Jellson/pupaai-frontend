@@ -51,16 +51,55 @@
     "title": "Pupa AI",
     "titleHighlight": "Studio",
     "subtitle": "Your AI-powered creative suite for e-commerce. Transform product images, generate mockups, and create virtual try-ons with cutting-edge AI technology.",
+    "heroTitle": "Pupa AI Studio",
+    "heroSubtitle": "Your All-in-One AI E-Commerce Creative Hub",
+    "heroDescription": "From viral video generation to stunning product images and precise SEO analysis. Pupa AI supercharges your cross-border e-commerce business.",
     "ctaStart": "Start Creating Now",
     "ctaLearn": "Learn More",
     "scrollDown": "Scroll to explore",
-    "featuresTitle": "Complete E-Commerce Creative Suite",
-    "featuresSubtitle": "Everything you need to create stunning product visuals and streamline your e-commerce workflow.",
+    "featuresTitle": "Full-Funnel AI E-Commerce Solutions",
+    "featuresSubtitle": "Three core modules to cover all your needs from content creation to marketing optimization.",
     "ctaTitle": "Ready to Transform Your E-Commerce Visuals?",
     "ctaSubtitle": "Join thousands of e-commerce businesses using Pupa AI Studio to create professional product images.",
     "footerDescription": "Your AI-powered creative suite for e-commerce. Transform product images, generate mockups, and create virtual try-ons."
   },
   "features": {
+    "tabs": {
+      "video": "AI Video Tools",
+      "image": "AI Image Processing",
+      "seo": "SEO & GEO Analysis"
+    },
+    "video": {
+      "generation": {
+        "title": "Viral Video Generation",
+        "description": "Generate localized UGC videos with diverse ethnicities, languages, and scenarios. Supports unboxing, outfit showcases, holiday gift themes and more."
+      },
+      "analysis": {
+        "title": "Video Analysis & Prompt Generation",
+        "description": "Deep-dive analysis of viral video characteristics, uncover success factors, and auto-generate matching video prompts.",
+        "badge": "Coming Soon"
+      }
+    },
+    "image": {
+      "model": {
+        "title": "AI Model Try-On",
+        "description": "Generate realistic models of various ethnicities, genders, body types and poses to perfectly showcase your products."
+      },
+      "product": {
+        "title": "AI Product Image Enhancement",
+        "description": "Batch recoloring, material swapping, smart extraction. Quickly generate high-quality product showcase images."
+      },
+      "scene": {
+        "title": "Scene Generation & Remix",
+        "description": "Swap products while keeping the scene, or swap scenes while keeping the product. Endless usage scenario possibilities."
+      }
+    },
+    "seo": {
+      "analysis": {
+        "title": "Full-Funnel Data Analysis",
+        "description": "Upload product images to instantly generate viral Descriptions, POV copy, Hashtags, and video shooting recommendations."
+      }
+    },
     "imageTools": {
       "title": "Image Processing Suite",
       "description": "Crop, resize, rotate, compress, and enhance your product images. AI-powered background removal, logo extraction, and watermark removal."
@@ -82,7 +121,7 @@
       "description": "Coming soon: AI-powered video editing and product video generation for your e-commerce needs.",
       "badge": "Coming Soon"
     },
-    "seo": {
+    "seoDeprecated": {
       "title": "SEO Optimization",
       "description": "Coming soon: AI-driven SEO tools to optimize your product listings and improve search rankings.",
       "badge": "Coming Soon"
@@ -696,6 +735,47 @@
     "quickStart": "Quick Start",
     "recentFiles": "Recent Files",
     "noFiles": "No files yet. Start by creating something!"
+  },
+  "featureDemo": {
+    "video": {
+      "pipeline": "AI VIDEO PIPELINE",
+      "step1": "Analyzing Product...",
+      "step2": "Matching Influencer...",
+      "step3": "Generating Script...",
+      "step4": "Synthesizing Video...",
+      "targetAudience": "TARGET AUDIENCE",
+      "usMarket": "US Market / Unboxing",
+      "euMarket": "EU Market / Lifestyle",
+      "seaMarket": "SEA Market / Review",
+      "aiGenerated": "AI Generated Content",
+      "likes": "12.5k",
+      "comments": "842",
+      "share": "Share"
+    },
+    "image": {
+      "original": "ORIGINAL",
+      "aiGenerated": "AI GENERATED",
+      "rawInput": "RAW INPUT",
+      "brandName": "VOGUE",
+      "backgroundReplacement": "Background Replacement",
+      "p1": "Product 1",
+      "p2": "Product 2",
+      "p3": "Product 3",
+      "multiEthnic": "Multi-Ethnic",
+      "virtualTryOn": "Virtual Try-On"
+    },
+    "seo": {
+      "marketAnalysis": "Market Analysis",
+      "realTimeInsights": "Real-time SEO Insights",
+      "live": "LIVE",
+      "viralityScore": "VIRALITY SCORE",
+      "topRegion": "TOP REGION",
+      "unitedStates": "United States",
+      "generatedKeywords": "Generated Keywords",
+      "viralHashtag": "Viral Hashtag Generation",
+      "competitorPov": "Competitor POV Analysis",
+      "localizedDesc": "Localized Description Optimization"
+    }
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. All rights reserved."
