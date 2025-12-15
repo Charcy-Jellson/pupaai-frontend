@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
-import { Video, Eraser, Type, Image, Sparkles, ChevronRight, Lock } from "lucide-react";
+import { Video, Eraser, Type, Image, Sparkles, ChevronRight, Lock, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -13,23 +13,27 @@ import {
 } from "@/types/video-tools";
 import { TextToVideo } from "@/components/video-tools/text-to-video";
 import { ImageToVideo } from "@/components/video-tools/image-to-video";
+import { VideoAnalysis } from "@/components/video-tools/video-analysis";
 
 // Icon mapping
 const iconMap: Record<string, React.ElementType> = {
   Eraser: Eraser,
   Type: Type,
   Image: Image,
+  Search: Search,
 };
 
 export default function VideoToolsPage() {
   const t = useTranslations("videoTools");
   const tc = useTranslations("common");
   
-  const [activeTool, setActiveTool] = useState<VideoToolType>("text-to-video");
+  const [activeTool, setActiveTool] = useState<VideoToolType>("video-analysis");
 
   // Render the active tool content
   const renderToolContent = () => {
     switch (activeTool) {
+      case "video-analysis":
+        return <VideoAnalysis />;
       case "text-to-video":
         return <TextToVideo />;
       case "image-to-video":

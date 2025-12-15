@@ -4,7 +4,8 @@
 export type VideoToolType = 
   | "remove-watermark"
   | "text-to-video"
-  | "image-to-video";
+  | "image-to-video"
+  | "video-analysis";
 
 // Tool menu item
 export interface VideoToolMenuItem {
@@ -14,8 +15,34 @@ export interface VideoToolMenuItem {
   isAvailable: boolean;
 }
 
+// Video analysis result types
+export interface ShotAnalysis {
+  shot_number: number;
+  timestamp?: string;
+  visual_style?: string;
+  subjects?: string;
+  action?: string;
+  camera_movement?: string;
+  audio_text?: string;
+}
+
+export interface VideoAnalysisResult {
+  success: boolean;
+  shots?: ShotAnalysis[];
+  success_factors?: string[];
+  generated_prompt?: string;
+  raw_analysis?: string;
+  error?: string;
+}
+
 // Video tools configuration
 export const VIDEO_TOOLS_CONFIG: VideoToolMenuItem[] = [
+  {
+    id: "video-analysis",
+    labelKey: "videoTools.tools.videoAnalysis",
+    icon: "Search",
+    isAvailable: true, // Active - AI video analysis
+  },
   {
     id: "remove-watermark",
     labelKey: "videoTools.tools.removeWatermark",
