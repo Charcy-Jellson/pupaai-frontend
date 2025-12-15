@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -15,13 +16,23 @@ import {
   Film,
   Target,
   FileText,
-  AlertCircle
+  AlertCircle,
+  Youtube,
+  Image,
+  Eye,
+  Heart,
+  MessageCircle,
+  Bookmark,
+  Hash,
+  Languages,
+  Globe
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { VideoAnalysisResult, ShotAnalysis } from "@/types/video-tools";
+import { VideoAnalysisResult, SocialMetrics, VideoInputMode } from "@/types/video-tools";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -33,7 +44,14 @@ const VIDEO_PLATFORMS = [
   { id: "kling", name: "Kling AI" },
   { id: "minimax", name: "MiniMax" },
   { id: "luma", name: "Luma Dream Machine" },
+  { id: "tiktok", name: "TikTok" },
+  { id: "youtube", name: "YouTube" },
   { id: "other", name: "Other / Unknown" },
+];
+
+const LANGUAGE_OPTIONS = [
+  { id: "en", name: "English" },
+  { id: "zh", name: "中文" },
 ];
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
@@ -41,45 +59,61 @@ const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 export function VideoAnalysis() {
   const t = useTranslations("videoTools.analysis");
   const tc = useTranslations("common");
+  const locale = useLocale();
   
   // State
+  const [inputMode, setInputMode] = useState<VideoInputMode>("upload");
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [selectedPlatform, setSelectedPlatform] = useState<string>("other");
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("sora");
+  const [outputLanguage, setOutputLanguage] = useState<string>(locale);
+  const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [screenshotPreviewUrl, setScreenshotPreviewUrl] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [result, setResult] = useState<VideoAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
   const [expandedShot, setExpandedShot] = useState<number | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isScreenshotDragging, setIsScreenshotDragging] = useState(false);
+  const [showExampleImage, setShowExampleImage] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const screenshotInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle file selection
+  // Handle video file selection
   const handleFileSelect = useCallback((file: File) => {
     setError(null);
     setResult(null);
     
-    // Validate file type
     if (!file.type.startsWith("video/")) {
       setError(t("errorNotVideo"));
       return;
     }
     
-    // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       setError(t("errorTooLarge"));
       return;
     }
     
     setVideoFile(file);
-    
-    // Create preview URL
     const url = URL.createObjectURL(file);
     setVideoPreviewUrl(url);
   }, [t]);
 
-  // Handle drag and drop
+  // Handle screenshot file selection
+  const handleScreenshotSelect = useCallback((file: File) => {
+    if (!file.type.startsWith("image/")) {
+      return;
+    }
+    
+    setScreenshotFile(file);
+    const url = URL.createObjectURL(file);
+    setScreenshotPreviewUrl(url);
+  }, []);
+
+  // Handle drag and drop for video
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -100,13 +134,41 @@ export function VideoAnalysis() {
     }
   }, [handleFileSelect]);
 
-  // Handle file input change
+  // Handle drag and drop for screenshot
+  const handleScreenshotDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsScreenshotDragging(true);
+  }, []);
+
+  const handleScreenshotDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsScreenshotDragging(false);
+  }, []);
+
+  const handleScreenshotDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsScreenshotDragging(false);
+    
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handleScreenshotSelect(file);
+    }
+  }, [handleScreenshotSelect]);
+
+  // Handle file input changes
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       handleFileSelect(file);
     }
   }, [handleFileSelect]);
+
+  const handleScreenshotInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleScreenshotSelect(file);
+    }
+  }, [handleScreenshotSelect]);
 
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -115,7 +177,6 @@ export function VideoAnalysis() {
       reader.readAsDataURL(file);
       reader.onload = () => {
         const result = reader.result as string;
-        // Remove the data URL prefix (e.g., "data:video/mp4;base64,")
         const base64 = result.split(",")[1];
         resolve(base64);
       };
@@ -123,27 +184,62 @@ export function VideoAnalysis() {
     });
   };
 
+  // Validate YouTube URL
+  const isValidYoutubeUrl = (url: string): boolean => {
+    const patterns = [
+      /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[\w-]+/,
+      /^https?:\/\/youtu\.be\/[\w-]+/,
+      /^https?:\/\/(www\.)?youtube\.com\/shorts\/[\w-]+/,
+    ];
+    return patterns.some(pattern => pattern.test(url));
+  };
+
   // Analyze video
   const handleAnalyze = async () => {
-    if (!videoFile) return;
+    // Validate input
+    if (inputMode === "upload" && !videoFile) {
+      setError(t("errorNoVideo"));
+      return;
+    }
+    if (inputMode === "youtube" && !youtubeUrl) {
+      setError(t("errorNoYoutube"));
+      return;
+    }
+    if (inputMode === "youtube" && !isValidYoutubeUrl(youtubeUrl)) {
+      setError(t("errorInvalidYoutube"));
+      return;
+    }
     
     setIsAnalyzing(true);
     setError(null);
     setResult(null);
     
     try {
-      const videoBase64 = await fileToBase64(videoFile);
+      const requestBody: Record<string, unknown> = {
+        source_platform: selectedPlatform !== "other" ? selectedPlatform : null,
+        output_language: outputLanguage,
+      };
+
+      // Add video input based on mode
+      if (inputMode === "upload" && videoFile) {
+        requestBody.video_base64 = await fileToBase64(videoFile);
+        requestBody.mime_type = videoFile.type;
+      } else if (inputMode === "youtube") {
+        requestBody.youtube_url = youtubeUrl;
+      }
+
+      // Add screenshot if provided
+      if (screenshotFile) {
+        requestBody.screenshot_base64 = await fileToBase64(screenshotFile);
+        requestBody.screenshot_mime_type = screenshotFile.type;
+      }
       
       const response = await fetch(`${BACKEND_URL}/api/video/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          video_base64: videoBase64,
-          mime_type: videoFile.type,
-          source_platform: selectedPlatform !== "other" ? selectedPlatform : null,
-        }),
+        body: JSON.stringify(requestBody),
       });
       
       const data: VideoAnalysisResult = await response.json();
@@ -177,10 +273,25 @@ export function VideoAnalysis() {
       URL.revokeObjectURL(videoPreviewUrl);
     }
     setVideoPreviewUrl(null);
+    setYoutubeUrl("");
     setResult(null);
     setError(null);
     setExpandedShot(null);
   };
+
+  // Reset screenshot
+  const handleResetScreenshot = () => {
+    setScreenshotFile(null);
+    if (screenshotPreviewUrl) {
+      URL.revokeObjectURL(screenshotPreviewUrl);
+    }
+    setScreenshotPreviewUrl(null);
+  };
+
+  // Check if can analyze
+  const canAnalyze = 
+    (inputMode === "upload" && videoFile) || 
+    (inputMode === "youtube" && youtubeUrl && isValidYoutubeUrl(youtubeUrl));
 
   return (
     <div className="space-y-6">
@@ -204,112 +315,282 @@ export function VideoAnalysis() {
       </Card>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Left: Upload & Settings */}
+        {/* Left: Input & Settings */}
         <div className="space-y-4">
-          {/* Upload Area */}
+          {/* Input Mode Selection */}
           <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Upload className="w-4 h-4" />
-                {t("uploadVideo")}
+                <Globe className="w-4 h-4" />
+                {t("inputMode")}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!videoFile ? (
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setInputMode("upload")}
                   className={cn(
-                    "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all",
-                    isDragging 
-                      ? "border-violet-500 bg-violet-500/10" 
-                      : "border-border/50 hover:border-violet-500/50 hover:bg-violet-500/5"
+                    "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all",
+                    inputMode === "upload"
+                      ? "bg-violet-500/20 text-violet-300 border border-violet-500/50"
+                      : "bg-muted/20 text-muted-foreground hover:bg-muted/40 border border-transparent"
                   )}
                 >
-                  <Video className="w-10 h-10 text-muted-foreground mb-3" />
-                  <p className="text-sm text-muted-foreground text-center">
-                    {t("uploadHint")}
-                  </p>
-                  <p className="text-xs text-muted-foreground/60 mt-2">
-                    MP4, WebM, MOV • Max 20MB
-                  </p>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/mov"
-                    onChange={handleInputChange}
-                    className="hidden"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Video Preview */}
-                  <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-                    {videoPreviewUrl && (
-                      <video
-                        src={videoPreviewUrl}
-                        controls
-                        className="w-full h-full object-contain"
-                      />
+                  <Upload className="w-4 h-4" />
+                  {t("uploadMode")}
+                </button>
+                <button
+                  onClick={() => setInputMode("youtube")}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-medium transition-all",
+                    inputMode === "youtube"
+                      ? "bg-red-500/20 text-red-300 border border-red-500/50"
+                      : "bg-muted/20 text-muted-foreground hover:bg-muted/40 border border-transparent"
+                  )}
+                >
+                  <Youtube className="w-4 h-4" />
+                  {t("youtubeMode")}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Video Input Area */}
+          <Card className="bg-card/50 border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                {inputMode === "upload" ? <Upload className="w-4 h-4" /> : <Youtube className="w-4 h-4" />}
+                {inputMode === "upload" ? t("uploadVideo") : t("youtubeUrl")}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {inputMode === "upload" ? (
+                // File Upload Mode
+                !videoFile ? (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={cn(
+                      "border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all",
+                      isDragging 
+                        ? "border-violet-500 bg-violet-500/10" 
+                        : "border-border/50 hover:border-violet-500/50 hover:bg-violet-500/5"
                     )}
+                  >
+                    <Video className="w-10 h-10 text-muted-foreground mb-3" />
+                    <p className="text-sm text-muted-foreground text-center">
+                      {t("uploadHint")}
+                    </p>
+                    <p className="text-xs text-muted-foreground/60 mt-2">
+                      MP4, WebM, MOV • Max 20MB
+                    </p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime,video/mov"
+                      onChange={handleInputChange}
+                      className="hidden"
+                    />
                   </div>
-                  
-                  {/* File Info */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground truncate max-w-[200px]">
-                      {videoFile.name}
-                    </span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={handleReset}
-                      className="text-muted-foreground hover:text-white"
-                    >
-                      {t("changeVideo")}
-                    </Button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                      {videoPreviewUrl && (
+                        <video
+                          src={videoPreviewUrl}
+                          controls
+                          className="w-full h-full object-contain"
+                        />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground truncate max-w-[200px]">
+                        {videoFile.name}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={handleReset}
+                        className="text-muted-foreground hover:text-white"
+                      >
+                        {t("changeVideo")}
+                      </Button>
+                    </div>
                   </div>
+                )
+              ) : (
+                // YouTube URL Mode
+                <div className="space-y-3">
+                  <Input
+                    type="url"
+                    placeholder={t("youtubeUrlPlaceholder")}
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    className="bg-muted/20 border-border/50"
+                  />
+                  {youtubeUrl && isValidYoutubeUrl(youtubeUrl) && (
+                    <div className="flex items-center gap-2 text-sm text-emerald-400">
+                      <Check className="w-4 h-4" />
+                      {t("validUrl")}
+                    </div>
+                  )}
+                  {youtubeUrl && !isValidYoutubeUrl(youtubeUrl) && (
+                    <div className="flex items-center gap-2 text-sm text-amber-400">
+                      <AlertCircle className="w-4 h-4" />
+                      {t("invalidUrl")}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Platform Selection */}
+          {/* Screenshot Upload (Optional) */}
           <Card className="bg-card/50 border-border/50">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="w-4 h-4" />
-                {t("platform")}
+                <Image className="w-4 h-4" />
+                {t("screenshot")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground mb-3">
-                {t("platformHint")}
+                {t("screenshotHint")}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                {VIDEO_PLATFORMS.map((platform) => (
-                  <button
-                    key={platform.id}
-                    onClick={() => setSelectedPlatform(platform.id)}
-                    className={cn(
-                      "px-3 py-2 rounded-lg text-sm text-left transition-all",
-                      selectedPlatform === platform.id
-                        ? "bg-violet-500/20 text-violet-300 border border-violet-500/50"
-                        : "bg-muted/20 text-muted-foreground hover:bg-muted/40 border border-transparent"
+              {!screenshotFile ? (
+                <div
+                  onClick={() => screenshotInputRef.current?.click()}
+                  onDragOver={handleScreenshotDragOver}
+                  onDragLeave={handleScreenshotDragLeave}
+                  onDrop={handleScreenshotDrop}
+                  className={cn(
+                    "border-2 border-dashed rounded-xl p-4 flex flex-col items-center justify-center cursor-pointer transition-all",
+                    isScreenshotDragging 
+                      ? "border-emerald-500 bg-emerald-500/10" 
+                      : "border-border/50 hover:border-emerald-500/50 hover:bg-emerald-500/5"
+                  )}
+                >
+                  <Image className="w-6 h-6 text-muted-foreground mb-2" />
+                  <p className="text-xs text-muted-foreground text-center">
+                    {t("uploadScreenshot")}
+                  </p>
+                  <input
+                    ref={screenshotInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleScreenshotInputChange}
+                    className="hidden"
+                  />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative rounded-lg overflow-hidden bg-black/50 h-24">
+                    {screenshotPreviewUrl && (
+                      <img
+                        src={screenshotPreviewUrl}
+                        alt="Screenshot"
+                        className="w-full h-full object-contain"
+                      />
                     )}
+                  </div>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleResetScreenshot}
+                    className="w-full text-muted-foreground hover:text-white text-xs"
                   >
-                    {platform.name}
-                  </button>
-                ))}
-              </div>
+                    {t("removeScreenshot")}
+                  </Button>
+                </div>
+              )}
+              
+              {/* Example Screenshot Link */}
+              <button
+                onClick={() => setShowExampleImage(!showExampleImage)}
+                className="mt-3 text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+              >
+                <Eye className="w-3 h-3" />
+                {t("screenshotExample")}
+                <ChevronDown className={cn("w-3 h-3 transition-transform", showExampleImage && "rotate-180")} />
+              </button>
+              
+              {/* Example Image Preview */}
+              <AnimatePresence>
+                {showExampleImage && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-3 rounded-lg overflow-hidden border border-emerald-500/30">
+                      <img
+                        src="/images/video-tools/screenshot-example.png"
+                        alt="Screenshot Example"
+                        className="w-full h-auto"
+                      />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </CardContent>
           </Card>
+
+          {/* Settings Row */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Platform Selection */}
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" />
+                  {t("platform")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <select
+                  value={selectedPlatform}
+                  onChange={(e) => setSelectedPlatform(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-muted/20 border border-border/50 text-sm text-white"
+                >
+                  {VIDEO_PLATFORMS.map((platform) => (
+                    <option key={platform.id} value={platform.id}>
+                      {platform.name}
+                    </option>
+                  ))}
+                </select>
+              </CardContent>
+            </Card>
+
+            {/* Language Selection */}
+            <Card className="bg-card/50 border-border/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium flex items-center gap-1">
+                  <Languages className="w-3 h-3" />
+                  {t("outputLanguage")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <select
+                  value={outputLanguage}
+                  onChange={(e) => setOutputLanguage(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-muted/20 border border-border/50 text-sm text-white"
+                >
+                  {LANGUAGE_OPTIONS.map((lang) => (
+                    <option key={lang.id} value={lang.id}>
+                      {lang.name}
+                    </option>
+                  ))}
+                </select>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Analyze Button */}
           <Button
             onClick={handleAnalyze}
-            disabled={!videoFile || isAnalyzing}
+            disabled={!canAnalyze || isAnalyzing}
             className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600"
           >
             {isAnalyzing ? (
@@ -362,6 +643,74 @@ export function VideoAnalysis() {
                 exit={{ opacity: 0 }}
                 className="space-y-4"
               >
+                {/* Social Metrics (if extracted from screenshot) */}
+                {result.social_metrics && (
+                  <Card className="bg-gradient-to-r from-pink-500/10 to-rose-500/10 border-pink-500/20">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium flex items-center gap-2">
+                        <Heart className="w-4 h-4 text-pink-400" />
+                        {t("socialMetrics")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {result.social_metrics.views && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                            <Eye className="w-4 h-4 text-blue-400" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("views")}</p>
+                              <p className="text-sm font-medium text-white">{result.social_metrics.views}</p>
+                            </div>
+                          </div>
+                        )}
+                        {result.social_metrics.likes && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                            <Heart className="w-4 h-4 text-red-400" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("likes")}</p>
+                              <p className="text-sm font-medium text-white">{result.social_metrics.likes}</p>
+                            </div>
+                          </div>
+                        )}
+                        {result.social_metrics.comments && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                            <MessageCircle className="w-4 h-4 text-green-400" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("comments")}</p>
+                              <p className="text-sm font-medium text-white">{result.social_metrics.comments}</p>
+                            </div>
+                          </div>
+                        )}
+                        {result.social_metrics.favorites && (
+                          <div className="flex items-center gap-2 p-2 rounded-lg bg-white/5">
+                            <Bookmark className="w-4 h-4 text-yellow-400" />
+                            <div>
+                              <p className="text-xs text-muted-foreground">{t("favorites")}</p>
+                              <p className="text-sm font-medium text-white">{result.social_metrics.favorites}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      {result.social_metrics.description && (
+                        <div className="mt-3 p-2 rounded-lg bg-white/5">
+                          <p className="text-xs text-muted-foreground mb-1">{t("description")}</p>
+                          <p className="text-sm text-gray-300">{result.social_metrics.description}</p>
+                        </div>
+                      )}
+                      {result.social_metrics.hashtags && result.social_metrics.hashtags.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {result.social_metrics.hashtags.map((tag, i) => (
+                            <Badge key={i} variant="secondary" className="text-xs">
+                              <Hash className="w-3 h-3 mr-0.5" />
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Generated Prompt */}
                 {result.generated_prompt && (
                   <Card className="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border-emerald-500/20">

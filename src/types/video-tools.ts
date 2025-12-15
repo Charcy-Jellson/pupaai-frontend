@@ -26,14 +26,28 @@ export interface ShotAnalysis {
   audio_text?: string;
 }
 
+export interface SocialMetrics {
+  views?: string;
+  likes?: string;
+  comments?: string;
+  favorites?: string;
+  description?: string;
+  hashtags?: string[];
+  pov?: string;
+}
+
 export interface VideoAnalysisResult {
   success: boolean;
   shots?: ShotAnalysis[];
   success_factors?: string[];
   generated_prompt?: string;
   raw_analysis?: string;
+  social_metrics?: SocialMetrics;
   error?: string;
 }
+
+// Video input mode
+export type VideoInputMode = "upload" | "youtube";
 
 // Video tools configuration
 export const VIDEO_TOOLS_CONFIG: VideoToolMenuItem[] = [
