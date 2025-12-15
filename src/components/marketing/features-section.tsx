@@ -105,74 +105,103 @@ export function FeaturesSection() {
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="flex flex-col gap-8"
+                className="flex flex-col gap-12"
               >
-                {/* Main Feature: Video Generation */}
-                <motion.div variants={item}>
-                  <Card className="bg-neutral-900/50 border-white/10 overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* Feature 1: Video Generation (Text Left, Demo Right) */}
+                <motion.div variants={item} className="grid lg:grid-cols-12 gap-8 items-center">
+                  {/* Left: Text Content (5 cols) */}
+                  <div className="lg:col-span-5 space-y-6">
+                    <div className="w-14 h-14 rounded-2xl bg-violet-500/20 flex items-center justify-center text-violet-300">
+                      <Clapperboard className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                        {t("video.generation.title")}
+                      </h3>
+                      <p className="text-lg text-gray-400 leading-relaxed">
+                        {t("video.generation.description")}
+                      </p>
+                    </div>
                     
-                    <CardHeader className="relative z-10 border-b border-white/5 pb-6">
-                      <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 rounded-xl bg-violet-500/20 flex items-center justify-center text-violet-300">
-                          <Clapperboard className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-2xl text-white mb-2">{t("video.generation.title")}</CardTitle>
-                          <CardDescription className="text-base text-gray-400 max-w-xl">
-                            {t("video.generation.description")}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent className="p-6 relative z-10">
-                       <VideoGenerationDemo />
-                    </CardContent>
-                  </Card>
-                </motion.div>
-
-                {/* Secondary Feature: Analysis */}
-                <motion.div variants={item}>
-                  <Card className="bg-neutral-900/50 border-white/10 hover:border-amber-500/30 transition-colors relative overflow-hidden group">
-                    <div className="absolute top-4 right-4 z-20">
-                      <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-3 py-1">
-                        {t("video.analysis.badge")}
+                    {/* Feature badges */}
+                    <div className="flex flex-wrap gap-2">
+                      <Badge variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+                        AI Scripting
+                      </Badge>
+                      <Badge variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+                        Multi-Scene
+                      </Badge>
+                      <Badge variant="outline" className="bg-white/5 border-white/10 hover:bg-white/10 transition-colors">
+                        Localized
                       </Badge>
                     </div>
-                    
-                    <div className="grid md:grid-cols-2">
-                      {/* Left: Text Content */}
-                      <div className="p-8 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/10">
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-6 text-amber-300 group-hover:scale-110 transition-transform duration-300">
-                          <ScanLine className="w-6 h-6" />
-                        </div>
-                        <CardTitle className="text-2xl text-white mb-4 group-hover:text-amber-500 transition-colors">
-                          {t("video.analysis.title")}
-                        </CardTitle>
-                        <CardDescription className="text-base text-gray-400 mb-6">
-                          {t("video.analysis.description")}
-                        </CardDescription>
-                        
-                        {/* Feature highlights */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                            <div className="text-lg mb-1">📹</div>
-                            <div className="text-xs font-medium text-white">{tDemo("videoAnalysis.upload")} / YouTube</div>
-                          </div>
-                          <div className="p-3 rounded-lg bg-white/5 border border-white/10">
-                            <div className="text-lg mb-1">📊</div>
-                            <div className="text-xs font-medium text-white">{tDemo("videoAnalysis.screenshot")}</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Right: Demo */}
-                      <div className="h-[400px] bg-black/30 p-4">
-                        <VideoAnalysisDemo />
+                  </div>
+
+                  {/* Right: Demo (7 cols) */}
+                  <div className="lg:col-span-7">
+                    <div className="relative rounded-2xl border border-white/10 bg-neutral-900/50 overflow-hidden shadow-2xl shadow-violet-500/10 group">
+                      <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                      <div className="relative z-10 p-1">
+                         <VideoGenerationDemo />
                       </div>
                     </div>
-                  </Card>
+                  </div>
+                </motion.div>
+
+                {/* Feature 2: Analysis (Demo Left, Text Right) */}
+                <motion.div variants={item} className="grid lg:grid-cols-12 gap-8 items-center">
+                  {/* Left: Demo (7 cols) */}
+                  <div className="lg:col-span-7 lg:order-1 order-2">
+                    <div className="relative rounded-2xl border border-white/10 bg-neutral-900/50 overflow-hidden shadow-2xl shadow-amber-500/10 group">
+                      {/* Window Controls Decoration */}
+                      <div className="h-8 bg-white/5 border-b border-white/5 flex items-center px-4 gap-2">
+                        <div className="w-3 h-3 rounded-full bg-red-500/20 border border-red-500/30" />
+                        <div className="w-3 h-3 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
+                        <div className="w-3 h-3 rounded-full bg-green-500/20 border border-green-500/30" />
+                      </div>
+                      
+                      <div className="p-1 bg-black/20">
+                        <div className="h-[500px] w-full">
+                          <VideoAnalysisDemo />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Text Content (5 cols) */}
+                  <div className="lg:col-span-5 lg:order-2 order-1 space-y-6">
+                    <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center text-amber-300">
+                      <ScanLine className="w-7 h-7" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-3 mb-4 flex-wrap">
+                        <h3 className="text-3xl font-bold text-white bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
+                          {t("video.analysis.title")}
+                        </h3>
+                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                          {t("video.analysis.badge")}
+                        </Badge>
+                      </div>
+                      <p className="text-lg text-gray-400 leading-relaxed">
+                        {t("video.analysis.description")}
+                      </p>
+                    </div>
+
+                    <div className="grid gap-3">
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                          <div className="text-sm">📹</div>
+                        </div>
+                        <div className="text-sm font-medium text-white">{tDemo("videoAnalysis.upload")} / YouTube</div>
+                      </div>
+                      <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                          <div className="text-sm">📊</div>
+                        </div>
+                        <div className="text-sm font-medium text-white">{tDemo("videoAnalysis.screenshot")}</div>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               </motion.div>
             </TabsContent>

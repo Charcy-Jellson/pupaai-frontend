@@ -356,9 +356,9 @@ export function SeoAnalysisDemo() {
 
   return (
     <div className="w-full h-full bg-neutral-900/50 border border-white/10 rounded-xl overflow-hidden">
-      <div className="grid md:grid-cols-2 h-full">
-        {/* Left: Product Image */}
-        <div className="p-6 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center justify-center bg-gradient-to-br from-emerald-500/5 to-transparent">
+      <div className="grid md:grid-cols-5 h-full">
+        {/* Left: Product Image (2/5 = 40%) */}
+        <div className="md:col-span-2 p-6 border-b md:border-b-0 md:border-r border-white/10 flex flex-col items-center justify-center bg-gradient-to-br from-emerald-500/5 to-transparent">
           <div className="relative">
             {/* Product image */}
             <div className="w-36 h-48 rounded-xl bg-white/5 border-2 border-white/20 flex items-center justify-center mb-4 overflow-hidden shadow-xl">
@@ -394,8 +394,8 @@ export function SeoAnalysisDemo() {
           </div>
         </div>
 
-        {/* Right: AI Generated Results */}
-        <div className="p-4 flex flex-col overflow-hidden">
+        {/* Right: AI Generated Results (3/5 = 60%) */}
+        <div className="md:col-span-3 p-4 flex flex-col overflow-hidden">
           <div className="text-xs text-emerald-400 font-medium mb-3 flex items-center gap-1">
             <Wand2 className="w-3 h-3" />
             {t("aiGenerated")}
@@ -525,190 +525,185 @@ export function VideoAnalysisDemo() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveStep((prev) => (prev + 1) % 4);
-    }, 2500);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Simulated analysis results
-  const analysisResults = {
-    shots: [
-      { num: 1, style: "Close-up, warm lighting" },
-      { num: 2, style: "Medium shot, dynamic" },
-      { num: 3, style: "Wide angle, lifestyle" },
-    ],
-    factors: [
-      t("factor1"),
-      t("factor2"),
-      t("factor3"),
-    ],
-  };
+  // Simulated detailed analysis results
+  const shotDescriptions = [
+    "The woman, initially wearing a plain sweater, is walking away from the camera, positioned slightly to the right...",
+    "Seamlessly transition (morph) her plain sweater into a festive, off-white crewneck sweatshirt featuring a prominent '67' graphic...",
+    "A quick, static close-up shot of the '67' graphic on the sweater, clearly showcasing the detailed Christmas patterns...",
+  ];
+
+  const successFactors = [
+    "Visually appealing 'winter wonderland' aesthetic with warm lighting and falling snow",
+    "Clear and effective product showcase with seamless transition highlighting the design",
+    "Engaging and relatable model who exudes joy and warmth",
+    "Concise and well-paced video (9 seconds) with dynamic camera work",
+  ];
 
   return (
-    <div className="h-full w-full rounded-lg overflow-hidden bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 p-4">
-      {/* Input Section */}
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex gap-1.5">
-          <div className={cn(
-            "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
-            activeStep === 0 ? "bg-amber-500/30 text-amber-300" : "bg-white/5 text-gray-500"
-          )}>
-            <Upload className="w-3 h-3" />
-            {t("upload")}
-          </div>
-          <div className={cn(
-            "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
-            activeStep === 0 ? "bg-red-500/30 text-red-300" : "bg-white/5 text-gray-500"
-          )}>
-            <Youtube className="w-3 h-3" />
-            YouTube
+    <div className="h-full w-full bg-neutral-900 overflow-hidden grid grid-cols-12 gap-3 p-3">
+      {/* Left Panel: Input Controls (7/12 = 58%) */}
+      <div className="col-span-7 flex flex-col gap-2 overflow-hidden">
+        {/* Header */}
+        <div className="shrink-0 rounded-lg bg-gradient-to-r from-violet-600/20 to-purple-600/20 border border-violet-500/20 p-2.5">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-500/30 flex items-center justify-center">
+              <Search className="w-3.5 h-3.5 text-violet-300" />
+            </div>
+            <div>
+              <div className="text-[10px] font-medium text-white">AI Video Analysis</div>
+              <div className="text-[7px] text-gray-400 leading-tight">Upload a video or paste a YouTube URL</div>
+            </div>
           </div>
         </div>
-        <div className="flex-1 h-px bg-white/10" />
-        <div className={cn(
-          "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
-          activeStep >= 1 ? "bg-emerald-500/30 text-emerald-300" : "bg-white/5 text-gray-500"
-        )}>
-          <Image className="w-3 h-3" />
-          {t("screenshot")}
-        </div>
-      </div>
 
-      {/* Screenshot Example */}
-      <div className="relative mb-3">
-        <motion.div
-          animate={{ 
-            opacity: activeStep >= 1 ? 1 : 0.3,
-            scale: activeStep >= 1 ? 1 : 0.98 
-          }}
-          className="relative h-16 rounded overflow-hidden border border-white/10"
-        >
+        {/* Video Source Tabs */}
+        <div className="shrink-0 rounded-lg border border-white/10 bg-white/5 p-2">
+          <div className="flex items-center gap-1.5 mb-2">
+            <div className="w-3 h-3 rounded-full bg-violet-500/30 flex items-center justify-center">
+              <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
+            </div>
+            <span className="text-[8px] text-gray-400">Video Source</span>
+          </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <div className="rounded-md bg-violet-500/20 border border-violet-500/30 p-1.5 text-center">
+              <div className="flex items-center justify-center gap-1">
+                <Upload className="w-2.5 h-2.5 text-violet-300" />
+                <span className="text-[8px] text-violet-200">Upload File</span>
+              </div>
+            </div>
+            <div className="rounded-md bg-white/5 border border-white/10 p-1.5 text-center">
+              <div className="flex items-center justify-center gap-1">
+                <Youtube className="w-2.5 h-2.5 text-gray-500" />
+                <span className="text-[8px] text-gray-500">YouTube URL</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Video Preview */}
+        <div className="flex-1 min-h-0 rounded-lg border border-white/10 bg-black/30 overflow-hidden relative">
           <img 
             src="/images/video-tools/screenshot-example.png" 
-            alt="Screenshot"
+            alt="Video Preview"
             className="w-full h-full object-cover"
           />
-          {activeStep >= 1 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
-              style={{ animation: "shimmer 2s infinite" }}
-            />
-          )}
-        </motion.div>
-        
-        {/* Social Metrics Preview */}
-        {activeStep >= 1 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="absolute -bottom-1 left-2 flex gap-2"
-          >
-            <span className="px-1.5 py-0.5 bg-pink-500/30 rounded text-[8px] text-pink-300 flex items-center gap-0.5">
-              <Eye className="w-2 h-2" /> 2.1M
-            </span>
-            <span className="px-1.5 py-0.5 bg-red-500/30 rounded text-[8px] text-red-300 flex items-center gap-0.5">
-              <Heart className="w-2 h-2" /> 156K
-            </span>
-            <span className="px-1.5 py-0.5 bg-blue-500/30 rounded text-[8px] text-blue-300 flex items-center gap-0.5">
-              <Bookmark className="w-2 h-2" /> 42K
-            </span>
-          </motion.div>
-        )}
-      </div>
-
-      {/* Analysis Results */}
-      <div className="grid grid-cols-2 gap-2">
-        {/* Shot Breakdown */}
-        <motion.div 
-          animate={{ opacity: activeStep >= 2 ? 1 : 0.3 }}
-          className="p-2 rounded bg-white/5 border border-white/10"
-        >
-          <div className="flex items-center gap-1 mb-1.5">
-            <Film className="w-3 h-3 text-blue-400" />
-            <span className="text-[9px] font-medium text-white">{t("shotBreakdown")}</span>
+          {/* Play Button Overlay */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center">
+              <div className="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-white border-b-[5px] border-b-transparent ml-0.5" />
+            </div>
           </div>
-          <div className="space-y-1">
-            {analysisResults.shots.map((shot, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, x: -5 }}
-                animate={{ 
-                  opacity: activeStep >= 2 ? 1 : 0.3,
-                  x: activeStep >= 2 ? 0 : -5 
-                }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-center gap-1.5"
-              >
-                <span className="w-3 h-3 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-[7px]">
-                  {shot.num}
-                </span>
-                <span className="text-[8px] text-gray-400 truncate">{shot.style}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Success Factors */}
-        <motion.div 
-          animate={{ opacity: activeStep >= 2 ? 1 : 0.3 }}
-          className="p-2 rounded bg-white/5 border border-white/10"
-        >
-          <div className="flex items-center gap-1 mb-1.5">
-            <Target className="w-3 h-3 text-amber-400" />
-            <span className="text-[9px] font-medium text-white">{t("successFactors")}</span>
-          </div>
-          <div className="space-y-1">
-            {analysisResults.factors.map((factor, i) => (
-              <motion.div 
-                key={i}
-                initial={{ opacity: 0, x: -5 }}
-                animate={{ 
-                  opacity: activeStep >= 2 ? 1 : 0.3,
-                  x: activeStep >= 2 ? 0 : -5 
-                }}
-                transition={{ delay: i * 0.1 }}
-                className="flex items-start gap-1"
-              >
-                <span className="text-amber-400 text-[8px]">•</span>
-                <span className="text-[8px] text-gray-400">{factor}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Generated Prompt Preview */}
-      <motion.div 
-        animate={{ opacity: activeStep >= 3 ? 1 : 0.3 }}
-        className="mt-2 p-2 rounded bg-emerald-500/10 border border-emerald-500/20"
-      >
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-1">
-            <FileText className="w-3 h-3 text-emerald-400" />
-            <span className="text-[9px] font-medium text-white">{t("generatedPrompt")}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Languages className="w-2.5 h-2.5 text-gray-400" />
-            <span className="text-[8px] text-gray-400">EN/中文</span>
+          {/* Duration */}
+          <div className="absolute bottom-1.5 right-1.5 px-1 py-0.5 bg-black/60 rounded text-[8px] text-white">
+            0:10
           </div>
         </div>
-        <p className="text-[8px] text-gray-400 leading-relaxed line-clamp-2">
-          {t("promptPreview")}
-        </p>
-      </motion.div>
 
-      {/* Step Indicator */}
-      <div className="flex justify-center gap-1.5 mt-3">
-        {[0, 1, 2, 3].map((step) => (
-          <div
-            key={step}
-            className={cn(
-              "w-1.5 h-1.5 rounded-full transition-all",
-              activeStep === step ? "bg-amber-500 w-3" : "bg-white/20"
-            )}
-          />
-        ))}
+        {/* Analyze Button */}
+        <motion.div 
+          animate={{ 
+            scale: activeStep === 0 ? [1, 1.02, 1] : 1,
+          }}
+          transition={{ duration: 1.5, repeat: activeStep === 0 ? Infinity : 0 }}
+          className="shrink-0 rounded-lg bg-gradient-to-r from-violet-500 to-purple-500 p-2 text-center cursor-pointer hover:from-violet-600 hover:to-purple-600 transition-all"
+        >
+          <div className="flex items-center justify-center gap-1.5">
+            <Search className="w-3 h-3 text-white" />
+            <span className="text-[10px] font-medium text-white">Analyze Video</span>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Right Panel: Analysis Results (5/12 = 42%) */}
+      <div className="col-span-5 flex flex-col gap-2 overflow-hidden">
+        {/* Shot Breakdown - Takes ~22% */}
+        <motion.div 
+          animate={{ opacity: activeStep >= 1 ? 1 : 0.3 }}
+          className="shrink-0 rounded-lg bg-white/5 border border-white/10 p-2.5 overflow-hidden"
+          style={{ height: '22%' }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-4 h-4 rounded bg-blue-500/20 flex items-center justify-center">
+              <Film className="w-2.5 h-2.5 text-blue-400" />
+            </div>
+            <span className="text-[10px] font-medium text-white">{t("shotBreakdown")}</span>
+            <span className="text-[8px] text-gray-500 ml-auto">3 shots</span>
+          </div>
+          
+          <div className="space-y-1.5 overflow-y-auto h-[calc(100%-24px)] pr-1">
+            {shotDescriptions.map((desc, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ 
+                  opacity: activeStep >= 1 ? 1 : 0.3,
+                  y: activeStep >= 1 ? 0 : 5 
+                }}
+                transition={{ delay: i * 0.15 }}
+                className="text-[8px] leading-relaxed"
+              >
+                <span className="text-blue-400 font-medium">Shot {i + 1}:</span>
+                <span className="text-gray-400 ml-1">{desc}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Success Factors - Takes ~22% */}
+        <motion.div 
+          animate={{ opacity: activeStep >= 2 ? 1 : 0.3 }}
+          className="shrink-0 rounded-lg bg-white/5 border border-white/10 p-2.5"
+          style={{ height: '22%' }}
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <div className="w-4 h-4 rounded bg-amber-500/20 flex items-center justify-center">
+              <Target className="w-2.5 h-2.5 text-amber-400" />
+            </div>
+            <span className="text-[10px] font-medium text-white">{t("successFactors")}</span>
+          </div>
+          <div className="space-y-1">
+            {successFactors.slice(0, 3).map((factor, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ 
+                  opacity: activeStep >= 2 ? 1 : 0.3,
+                  x: activeStep >= 2 ? 0 : -5 
+                }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-start gap-1.5"
+              >
+                <span className="text-amber-400 text-[7px] mt-0.5 shrink-0">●</span>
+                <span className="text-[8px] text-gray-400 leading-snug line-clamp-1">{factor}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Generated Prompt - Takes ~56% */}
+        <motion.div 
+          animate={{ opacity: activeStep >= 3 ? 1 : 0.3 }}
+          className="shrink-0 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 p-2.5"
+          style={{ height: '56%' }}
+        >
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <FileText className="w-3 h-3 text-emerald-400" />
+              <span className="text-[10px] font-medium text-white">{t("generatedPrompt")}</span>
+            </div>
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-black/20">
+              <Languages className="w-2.5 h-2.5 text-emerald-400/70" />
+              <span className="text-[8px] text-emerald-400/70">EN/中文</span>
+            </div>
+          </div>
+          <p className="text-[8px] text-emerald-100/70 leading-relaxed line-clamp-2">
+            Create a close-up product reveal with warm lighting, transitioning to lifestyle shot with dynamic camera movement...
+          </p>
+        </motion.div>
       </div>
     </div>
   );
