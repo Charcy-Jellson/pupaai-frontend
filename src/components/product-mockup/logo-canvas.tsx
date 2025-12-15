@@ -48,6 +48,8 @@ export function LogoCanvas({
   const logoRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, scale: 1 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   // Handle file upload for logo
@@ -107,6 +109,45 @@ export function LogoCanvas({
     setIsDragging(false);
   }, []);
 
+  // Handle resize start (from corner handles)
+  const handleResizeStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    if (!logoImage || isProcessing) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    
+    setResizeStart({ x: clientX, y: clientY, scale: logoPosition.scale });
+  }, [logoImage, isProcessing, logoPosition.scale]);
+
+  // Handle resize move
+  const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isResizing || !containerRef.current) return;
+
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    // Calculate distance from start position
+    const deltaX = clientX - resizeStart.x;
+    const deltaY = clientY - resizeStart.y;
+    
+    // Use the diagonal distance for more intuitive scaling
+    const delta = (deltaX + deltaY) / 2;
+    const scaleFactor = delta / (rect.width / 4); // Adjust sensitivity
+    
+    const newScale = Math.max(0.1, Math.min(3, resizeStart.scale + scaleFactor));
+    onPositionChange({ scale: newScale });
+  }, [isResizing, resizeStart, onPositionChange]);
+
+  // Handle resize end
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
   // Set up global event listeners for drag
   useEffect(() => {
     if (isDragging) {
@@ -123,6 +164,23 @@ export function LogoCanvas({
       window.removeEventListener("touchend", handleDragEnd);
     };
   }, [isDragging, handleDragMove, handleDragEnd]);
+
+  // Set up global event listeners for resize
+  useEffect(() => {
+    if (isResizing) {
+      window.addEventListener("mousemove", handleResizeMove);
+      window.addEventListener("mouseup", handleResizeEnd);
+      window.addEventListener("touchmove", handleResizeMove);
+      window.addEventListener("touchend", handleResizeEnd);
+    }
+
+    return () => {
+      window.removeEventListener("mousemove", handleResizeMove);
+      window.removeEventListener("mouseup", handleResizeEnd);
+      window.removeEventListener("touchmove", handleResizeMove);
+      window.removeEventListener("touchend", handleResizeEnd);
+    };
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   // Scale controls
   const handleScaleChange = useCallback((value: number[]) => {
@@ -208,11 +266,39 @@ export function LogoCanvas({
                       isDragging ? "border-violet-500" : "border-white/50"
                     )}
                   />
-                  {/* Corner handles */}
-                  <div className="absolute -top-1 -left-1 w-3 h-3 bg-violet-500 rounded-full" />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-violet-500 rounded-full" />
-                  <div className="absolute -bottom-1 -left-1 w-3 h-3 bg-violet-500 rounded-full" />
-                  <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-violet-500 rounded-full" />
+                  {/* Corner handles - draggable for resize */}
+                  <div 
+                    onMouseDown={handleResizeStart}
+                    onTouchStart={handleResizeStart}
+                    className={cn(
+                      "absolute -top-1.5 -left-1.5 w-4 h-4 bg-violet-500 rounded-full cursor-nwse-resize hover:bg-violet-400 transition-colors z-10",
+                      isResizing && "bg-violet-400"
+                    )}
+                  />
+                  <div 
+                    onMouseDown={handleResizeStart}
+                    onTouchStart={handleResizeStart}
+                    className={cn(
+                      "absolute -top-1.5 -right-1.5 w-4 h-4 bg-violet-500 rounded-full cursor-nesw-resize hover:bg-violet-400 transition-colors z-10",
+                      isResizing && "bg-violet-400"
+                    )}
+                  />
+                  <div 
+                    onMouseDown={handleResizeStart}
+                    onTouchStart={handleResizeStart}
+                    className={cn(
+                      "absolute -bottom-1.5 -left-1.5 w-4 h-4 bg-violet-500 rounded-full cursor-nesw-resize hover:bg-violet-400 transition-colors z-10",
+                      isResizing && "bg-violet-400"
+                    )}
+                  />
+                  <div 
+                    onMouseDown={handleResizeStart}
+                    onTouchStart={handleResizeStart}
+                    className={cn(
+                      "absolute -bottom-1.5 -right-1.5 w-4 h-4 bg-violet-500 rounded-full cursor-nwse-resize hover:bg-violet-400 transition-colors z-10",
+                      isResizing && "bg-violet-400"
+                    )}
+                  />
                 </div>
               </div>
             )}

@@ -317,12 +317,18 @@ export function useMultiImageEditor() {
   );
 
   const batchCompress = useCallback(
-    async (targetSizeKB: number) => {
+    async (targetSizeKB: number): Promise<{ originalSize: number; finalSize: number; quality: number }> => {
       const selectedImages = state.images.filter((img) => img.isSelected);
-      if (selectedImages.length === 0) return;
+      if (selectedImages.length === 0) {
+        return { originalSize: 0, finalSize: 0, quality: 0 };
+      }
 
       const imageIds = selectedImages.map((img) => img.id);
       setImagesProcessing(imageIds, true);
+
+      let totalOriginalSize = 0;
+      let totalFinalSize = 0;
+      let totalQuality = 0;
 
       try {
         await Promise.all(
@@ -336,6 +342,13 @@ export function useMultiImageEditor() {
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
+
+            // Get original size
+            const originalBlob = await new Promise<Blob>((resolve) => {
+              canvas.toBlob((b) => resolve(b!), "image/jpeg", 1.0);
+            });
+            const originalSizeKB = originalBlob.size / 1024;
+            totalOriginalSize += originalSizeKB;
 
             // Binary search for optimal quality
             let minQuality = 0.1;
@@ -365,7 +378,12 @@ export function useMultiImageEditor() {
               bestBlob = await new Promise<Blob>((resolve) => {
                 canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.1);
               });
+              bestQuality = 0.1;
             }
+
+            const finalSizeKB = bestBlob.size / 1024;
+            totalFinalSize += finalSizeKB;
+            totalQuality += bestQuality * 100;
 
             const resultUrl = await new Promise<string>((resolve) => {
               const reader = new FileReader();
@@ -380,6 +398,14 @@ export function useMultiImageEditor() {
             });
           })
         );
+
+        const avgQuality = selectedImages.length > 0 ? totalQuality / selectedImages.length : 0;
+        
+        return {
+          originalSize: Math.round(totalOriginalSize),
+          finalSize: Math.round(totalFinalSize),
+          quality: Math.round(avgQuality),
+        };
       } finally {
         setImagesProcessing(imageIds, false);
       }

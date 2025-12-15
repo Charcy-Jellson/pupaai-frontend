@@ -77,7 +77,7 @@
       "analysis": {
         "title": "视频分析与 Prompt 生成",
         "description": "深度拆解爆款视频特点，分析火爆原因并自动生成同款视频 Prompt。",
-        "badge": "Coming Soon"
+        "badge": "新功能"
       }
     },
     "image": {
@@ -829,6 +829,17 @@
       "viralHashtag": "爆款标签生成",
       "competitorPov": "竞品视角分析",
       "localizedDesc": "本地化描述优化"
+    },
+    "videoAnalysis": {
+      "upload": "上传",
+      "screenshot": "截图",
+      "shotBreakdown": "镜头拆解",
+      "successFactors": "爆款因素",
+      "generatedPrompt": "生成的提示词",
+      "factor1": "热门音频选择",
+      "factor2": "最佳视频时长",
+      "factor3": "强视觉钩子",
+      "promptPreview": "创建一个暖光特写产品展示，过渡到动态运镜的生活场景..."
     }
   },
   "footer": {

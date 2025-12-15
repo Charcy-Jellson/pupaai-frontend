@@ -10,7 +10,17 @@ import {
   Share2, 
   Heart,
   MessageCircle,
-  Wand2
+  Wand2,
+  Youtube,
+  Upload,
+  Image,
+  Film,
+  Target,
+  FileText,
+  Languages,
+  Eye,
+  Bookmark,
+  Search
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -503,6 +513,203 @@ export function SceneSwitchDemo() {
       >
         {scenes[currentScene].label}
       </motion.div>
+    </div>
+  );
+}
+
+// --- Video Analysis Demo ---
+export function VideoAnalysisDemo() {
+  const t = useTranslations("featureDemo.videoAnalysis");
+  const [activeStep, setActiveStep] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % 4);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Simulated analysis results
+  const analysisResults = {
+    shots: [
+      { num: 1, style: "Close-up, warm lighting" },
+      { num: 2, style: "Medium shot, dynamic" },
+      { num: 3, style: "Wide angle, lifestyle" },
+    ],
+    factors: [
+      t("factor1"),
+      t("factor2"),
+      t("factor3"),
+    ],
+  };
+
+  return (
+    <div className="h-full w-full rounded-lg overflow-hidden bg-gradient-to-br from-amber-500/5 to-orange-500/5 border border-amber-500/20 p-4">
+      {/* Input Section */}
+      <div className="flex items-center gap-2 mb-3">
+        <div className="flex gap-1.5">
+          <div className={cn(
+            "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
+            activeStep === 0 ? "bg-amber-500/30 text-amber-300" : "bg-white/5 text-gray-500"
+          )}>
+            <Upload className="w-3 h-3" />
+            {t("upload")}
+          </div>
+          <div className={cn(
+            "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
+            activeStep === 0 ? "bg-red-500/30 text-red-300" : "bg-white/5 text-gray-500"
+          )}>
+            <Youtube className="w-3 h-3" />
+            YouTube
+          </div>
+        </div>
+        <div className="flex-1 h-px bg-white/10" />
+        <div className={cn(
+          "px-2 py-1 rounded text-[10px] flex items-center gap-1 transition-all",
+          activeStep >= 1 ? "bg-emerald-500/30 text-emerald-300" : "bg-white/5 text-gray-500"
+        )}>
+          <Image className="w-3 h-3" />
+          {t("screenshot")}
+        </div>
+      </div>
+
+      {/* Screenshot Example */}
+      <div className="relative mb-3">
+        <motion.div
+          animate={{ 
+            opacity: activeStep >= 1 ? 1 : 0.3,
+            scale: activeStep >= 1 ? 1 : 0.98 
+          }}
+          className="relative h-16 rounded overflow-hidden border border-white/10"
+        >
+          <img 
+            src="/images/video-tools/screenshot-example.png" 
+            alt="Screenshot"
+            className="w-full h-full object-cover"
+          />
+          {activeStep >= 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+              style={{ animation: "shimmer 2s infinite" }}
+            />
+          )}
+        </motion.div>
+        
+        {/* Social Metrics Preview */}
+        {activeStep >= 1 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute -bottom-1 left-2 flex gap-2"
+          >
+            <span className="px-1.5 py-0.5 bg-pink-500/30 rounded text-[8px] text-pink-300 flex items-center gap-0.5">
+              <Eye className="w-2 h-2" /> 2.1M
+            </span>
+            <span className="px-1.5 py-0.5 bg-red-500/30 rounded text-[8px] text-red-300 flex items-center gap-0.5">
+              <Heart className="w-2 h-2" /> 156K
+            </span>
+            <span className="px-1.5 py-0.5 bg-blue-500/30 rounded text-[8px] text-blue-300 flex items-center gap-0.5">
+              <Bookmark className="w-2 h-2" /> 42K
+            </span>
+          </motion.div>
+        )}
+      </div>
+
+      {/* Analysis Results */}
+      <div className="grid grid-cols-2 gap-2">
+        {/* Shot Breakdown */}
+        <motion.div 
+          animate={{ opacity: activeStep >= 2 ? 1 : 0.3 }}
+          className="p-2 rounded bg-white/5 border border-white/10"
+        >
+          <div className="flex items-center gap-1 mb-1.5">
+            <Film className="w-3 h-3 text-blue-400" />
+            <span className="text-[9px] font-medium text-white">{t("shotBreakdown")}</span>
+          </div>
+          <div className="space-y-1">
+            {analysisResults.shots.map((shot, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ 
+                  opacity: activeStep >= 2 ? 1 : 0.3,
+                  x: activeStep >= 2 ? 0 : -5 
+                }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-center gap-1.5"
+              >
+                <span className="w-3 h-3 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-[7px]">
+                  {shot.num}
+                </span>
+                <span className="text-[8px] text-gray-400 truncate">{shot.style}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Success Factors */}
+        <motion.div 
+          animate={{ opacity: activeStep >= 2 ? 1 : 0.3 }}
+          className="p-2 rounded bg-white/5 border border-white/10"
+        >
+          <div className="flex items-center gap-1 mb-1.5">
+            <Target className="w-3 h-3 text-amber-400" />
+            <span className="text-[9px] font-medium text-white">{t("successFactors")}</span>
+          </div>
+          <div className="space-y-1">
+            {analysisResults.factors.map((factor, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, x: -5 }}
+                animate={{ 
+                  opacity: activeStep >= 2 ? 1 : 0.3,
+                  x: activeStep >= 2 ? 0 : -5 
+                }}
+                transition={{ delay: i * 0.1 }}
+                className="flex items-start gap-1"
+              >
+                <span className="text-amber-400 text-[8px]">•</span>
+                <span className="text-[8px] text-gray-400">{factor}</span>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Generated Prompt Preview */}
+      <motion.div 
+        animate={{ opacity: activeStep >= 3 ? 1 : 0.3 }}
+        className="mt-2 p-2 rounded bg-emerald-500/10 border border-emerald-500/20"
+      >
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-1">
+            <FileText className="w-3 h-3 text-emerald-400" />
+            <span className="text-[9px] font-medium text-white">{t("generatedPrompt")}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Languages className="w-2.5 h-2.5 text-gray-400" />
+            <span className="text-[8px] text-gray-400">EN/中文</span>
+          </div>
+        </div>
+        <p className="text-[8px] text-gray-400 leading-relaxed line-clamp-2">
+          {t("promptPreview")}
+        </p>
+      </motion.div>
+
+      {/* Step Indicator */}
+      <div className="flex justify-center gap-1.5 mt-3">
+        {[0, 1, 2, 3].map((step) => (
+          <div
+            key={step}
+            className={cn(
+              "w-1.5 h-1.5 rounded-full transition-all",
+              activeStep === step ? "bg-amber-500 w-3" : "bg-white/20"
+            )}
+          />
+        ))}
+      </div>
     </div>
   );
 }

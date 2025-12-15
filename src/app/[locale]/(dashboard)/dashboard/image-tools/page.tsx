@@ -246,8 +246,8 @@ export default function ImageToolsPage() {
   };
 
   const handleBatchCompress = async (targetSizeKB: number) => {
-    await editor.batchCompress(targetSizeKB);
-    return { originalSize: 0, finalSize: 0, quality: 0 }; // Simplified for batch
+    const result = await editor.batchCompress(targetSizeKB);
+    return result;
   };
 
   const handleBatchRemoveBackground = async (modelId?: string) => {

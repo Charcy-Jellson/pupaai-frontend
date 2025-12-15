@@ -77,7 +77,7 @@
       "analysis": {
         "title": "Video Analysis & Prompt Generation",
         "description": "Deep-dive analysis of viral video characteristics, uncover success factors, and auto-generate matching video prompts.",
-        "badge": "Coming Soon"
+        "badge": "New"
       }
     },
     "image": {
@@ -829,6 +829,17 @@
       "viralHashtag": "Viral Hashtag Generation",
       "competitorPov": "Competitor POV Analysis",
       "localizedDesc": "Localized Description Optimization"
+    },
+    "videoAnalysis": {
+      "upload": "Upload",
+      "screenshot": "Screenshot",
+      "shotBreakdown": "Shot Breakdown",
+      "successFactors": "Success Factors",
+      "generatedPrompt": "Generated Prompt",
+      "factor1": "Trending audio selection",
+      "factor2": "Optimal video duration",
+      "factor3": "Strong visual hook",
+      "promptPreview": "Create a close-up product reveal with warm lighting, transitioning to lifestyle shot with dynamic camera movement..."
     }
   },
   "footer": {

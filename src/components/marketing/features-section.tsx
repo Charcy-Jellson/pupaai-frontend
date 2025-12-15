@@ -17,7 +17,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { VideoGenerationDemo, ImageComparisonDemo, SeoAnalysisDemo, SceneSwitchDemo } from "@/components/marketing/feature-demos";
+import { VideoGenerationDemo, ImageComparisonDemo, SeoAnalysisDemo, SceneSwitchDemo, VideoAnalysisDemo } from "@/components/marketing/feature-demos";
 
 const container = {
   hidden: { opacity: 0 },
@@ -105,11 +105,11 @@ export function FeaturesSection() {
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className="grid lg:grid-cols-12 gap-8"
+                className="flex flex-col gap-8"
               >
                 {/* Main Feature: Video Generation */}
-                <motion.div variants={item} className="lg:col-span-8">
-                  <Card className="h-full bg-neutral-900/50 border-white/10 overflow-hidden relative group">
+                <motion.div variants={item}>
+                  <Card className="bg-neutral-900/50 border-white/10 overflow-hidden relative group">
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                     
                     <CardHeader className="relative z-10 border-b border-white/5 pb-6">
@@ -133,36 +133,45 @@ export function FeaturesSection() {
                 </motion.div>
 
                 {/* Secondary Feature: Analysis */}
-                <motion.div variants={item} className="lg:col-span-4 flex flex-col gap-6">
-                  <Card className="flex-1 bg-black/40 border-white/10 hover:border-violet-500/30 transition-colors relative overflow-hidden group">
+                <motion.div variants={item}>
+                  <Card className="bg-neutral-900/50 border-white/10 hover:border-amber-500/30 transition-colors relative overflow-hidden group">
                     <div className="absolute top-4 right-4 z-20">
                       <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20 px-3 py-1">
                         {t("video.analysis.badge")}
                       </Badge>
                     </div>
                     
-                    <CardHeader>
-                      <div className="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4 text-amber-500 group-hover:scale-110 transition-transform duration-300">
-                        <ScanLine className="w-5 h-5" />
-                      </div>
-                      <CardTitle className="text-xl text-white group-hover:text-amber-500 transition-colors">
-                        {t("video.analysis.title")}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-base text-gray-400 mb-6">
-                        {t("video.analysis.description")}
-                      </CardDescription>
-                      
-                      {/* Abstract Visual for Coming Soon */}
-                      <div className="h-32 w-full rounded-lg bg-white/5 border border-white/5 relative overflow-hidden flex items-center justify-center">
-                        <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.02)_50%,transparent_75%)] bg-[length:200%_200%] animate-[shimmer_3s_infinite]" />
-                        <div className="text-center opacity-40">
-                          <div className="text-4xl font-bold text-white/20 tracking-tighter">AI VISION</div>
-                          <div className="text-[10px] text-white/40 uppercase tracking-[0.2em] mt-1">Processing Engine</div>
+                    <div className="grid md:grid-cols-2">
+                      {/* Left: Text Content */}
+                      <div className="p-8 flex flex-col justify-center border-b md:border-b-0 md:border-r border-white/10">
+                        <div className="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center mb-6 text-amber-300 group-hover:scale-110 transition-transform duration-300">
+                          <ScanLine className="w-6 h-6" />
+                        </div>
+                        <CardTitle className="text-2xl text-white mb-4 group-hover:text-amber-500 transition-colors">
+                          {t("video.analysis.title")}
+                        </CardTitle>
+                        <CardDescription className="text-base text-gray-400 mb-6">
+                          {t("video.analysis.description")}
+                        </CardDescription>
+                        
+                        {/* Feature highlights */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <div className="text-lg mb-1">📹</div>
+                            <div className="text-xs font-medium text-white">{tDemo("videoAnalysis.upload")} / YouTube</div>
+                          </div>
+                          <div className="p-3 rounded-lg bg-white/5 border border-white/10">
+                            <div className="text-lg mb-1">📊</div>
+                            <div className="text-xs font-medium text-white">{tDemo("videoAnalysis.screenshot")}</div>
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
+                      
+                      {/* Right: Demo */}
+                      <div className="h-[400px] bg-black/30 p-4">
+                        <VideoAnalysisDemo />
+                      </div>
+                    </div>
                   </Card>
                 </motion.div>
               </motion.div>
