@@ -74,15 +74,40 @@ export const PRESET_COLORS: ColorOption[] = [
 
 /**
  * Phase of the mockup generation workflow
- * - compose: Phase 1 - Select product, logo, position, generate first mockup
- * - recolor: Phase 2 - Confirm mockup looks good, select colors, batch recolor
+ * - compose: Phase 1 - Select products, logo, position, generate previews
+ * - preview: Phase 2 - Review previews, select which to use for color variants
+ * - recolor: Phase 3 - Select colors and generate color variants
  */
-export type MockupPhase = "compose" | "recolor";
+export type MockupPhase = "compose" | "preview" | "recolor";
 
 /**
  * Result status for batch generation
  */
-export type MockupResultStatus = "pending" | "processing" | "fulfilled" | "rejected";
+export type MockupResultStatus = "idle" | "pending" | "processing" | "fulfilled" | "rejected";
+
+/**
+ * Single product item in multi-product workflow
+ */
+export interface ProductItem {
+  /** Unique identifier */
+  id: string;
+  /** Product image as data URL */
+  image: string;
+  /** MIME type of the image */
+  mimeType: string;
+  /** Logo position for this specific product */
+  logoPosition: LogoPosition;
+  /** Generated preview image as data URL */
+  preview: string | null;
+  /** Preview generation status */
+  previewStatus: MockupResultStatus;
+  /** Preview generation error if any */
+  previewError: string | null;
+  /** Whether this product is selected for batch operations */
+  selected: boolean;
+  /** Color variants generated for this product's preview */
+  variants: MockupResult[];
+}
 
 /**
  * Single mockup result in a batch
@@ -97,45 +122,53 @@ export interface MockupResult {
 }
 
 /**
- * State for the mockup editor (two-phase workflow)
+ * State for the mockup editor (multi-product workflow)
  */
 export interface MockupEditorState {
   // ========== Phase Tracking ==========
   /** Current workflow phase */
   phase: MockupPhase;
   
-  // ========== Phase 1: Compose ==========
-  /** Selected product image */
-  productImage: string | null;
-  productMimeType: string;
-  /** Logo image to be applied */
+  // ========== Multi-Product Support ==========
+  /** All product items */
+  products: ProductItem[];
+  /** Currently active product ID (for editing logo position) */
+  activeProductId: string | null;
+  
+  // ========== Logo (shared across all products) ==========
+  /** Logo image to be applied (shared) */
   logoImage: string | null;
   logoMimeType: string;
-  /** Current logo position and transformation */
-  logoPosition: LogoPosition;
-  /** First generated mockup (before color variants) */
-  firstMockup: string | null;
-  firstMockupMimeType: string;
   
-  // ========== Phase 2: Recolor ==========
-  /** Confirmed mockup that user approved (used as base for recoloring) */
-  confirmedMockup: string | null;
-  confirmedMockupMimeType: string;
+  // ========== Color Variants ==========
   /** Selected colors for batch generation */
   selectedColors: ColorOption[];
-  /** Generated mockup results (for batch recoloring) */
-  results: MockupResult[];
   
   // ========== Processing State ==========
   /** Processing state */
   isProcessing: boolean;
-  /** Number of mockups currently being generated */
+  /** Number of items currently being processed */
   processingCount: number;
+  /** Total items to process */
+  totalToProcess: number;
   /** Error message if any */
   error: string | null;
   
-  // ========== Legacy/Template Support ==========
-  /** Selected template (if using from gallery) */
+  // ========== Legacy Support (single product mode) ==========
+  /** Selected product image (legacy - for backward compatibility) */
+  productImage: string | null;
+  productMimeType: string;
+  /** Current logo position (legacy) */
+  logoPosition: LogoPosition;
+  /** First generated mockup (legacy) */
+  firstMockup: string | null;
+  firstMockupMimeType: string;
+  /** Confirmed mockup (legacy) */
+  confirmedMockup: string | null;
+  confirmedMockupMimeType: string;
+  /** Results (legacy) */
+  results: MockupResult[];
+  /** Selected template (legacy) */
   selectedTemplate: ProductTemplate | null;
 }
 
@@ -171,3 +204,6 @@ export const DEFAULT_LOGO_POSITION: LogoPosition = {
   scale: 1,
   rotation: 0,
 };
+
+// Maximum concurrent API requests for batch operations
+export const MAX_CONCURRENT_REQUESTS = 5;

@@ -19,6 +19,10 @@ import {
   Plus,
   Folder,
   Save,
+  Download,
+  X,
+  Pencil,
+  Maximize2,
 } from "lucide-react";
 import { useMockupEditor } from "@/hooks/use-mockup-editor";
 import {
@@ -28,9 +32,11 @@ import {
   ResultsGallery,
 } from "@/components/product-mockup";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -57,25 +63,43 @@ export default function ProductMockupPage() {
 
   const {
     state,
-    // Phase 1: Compose
-    setProductImage,
-    clearProductImage,
+    // Multi-product management
+    addProducts,
+    removeProduct,
+    clearAllProducts,
+    setActiveProduct,
+    toggleProductSelection,
+    selectAllProducts,
+    deselectAllProducts,
+    updateProductLogoPosition,
+    resetProductLogoPosition,
+    clearProductPreview,
+    // Logo management
     setLogoImage,
     clearLogoImage,
-    updateLogoPosition,
-    resetLogoPosition,
-    generateFirstMockup,
+    // Preview generation
+    generateAllPreviews,
+    regenerateProductPreview,
     // Phase transition
-    confirmMockup,
-    goBackToCompose,
+    goToPhase,
     // Phase 2: Recolor
     setSelectedColors,
     generateColorVariants,
-    retryMockup,
     // Downloads
+    downloadSelectedPreviews,
+    downloadSelectedVariants,
+    // Legacy support
+    setProductImage,
+    clearProductImage,
+    updateLogoPosition,
+    resetLogoPosition,
+    generateFirstMockup,
+    confirmMockup,
+    goBackToCompose,
     downloadMockup,
     downloadAllMockups,
     downloadConfirmedMockup,
+    retryMockup,
     // Utils
     clearError,
   } = useMockupEditor();
@@ -90,22 +114,38 @@ export default function ProductMockupPage() {
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  
+  // Enlarged preview state
+  const [enlargedPreview, setEnlargedPreview] = useState<string | null>(null);
+
+  // Add More Products Dialog state
+  const [addMoreDialogOpen, setAddMoreDialogOpen] = useState(false);
 
   // Close dialogs when route changes to prevent Radix Portal overlay from getting stuck
   useEffect(() => {
     setSaveDialogOpen(false);
     setShowNewFolder(false);
+    setEnlargedPreview(null);
+    setAddMoreDialogOpen(false);
   }, [pathname]);
 
-  // Check if ready for Phase 1 (generate first mockup)
+  // Check if ready for Phase 1 (generate previews)
+  const canGeneratePreviews =
+    state.products.length > 0 && state.logoImage && !state.isProcessing;
+  
+  // Legacy: Check if ready for single product mode
   const canGenerateFirst =
-    state.productImage && state.logoImage && !state.isProcessing;
+    (state.products.length > 0 || state.productImage) && state.logoImage && !state.isProcessing;
 
   // Check if ready for Phase 2 (generate color variants)
+  const selectedProducts = state.products.filter(p => p.selected && p.preview);
   const canGenerateColors =
-    state.confirmedMockup &&
+    selectedProducts.length > 0 &&
     state.selectedColors.length > 0 &&
     !state.isProcessing;
+  
+  // Check if any products have previews
+  const hasAnyPreviews = state.products.some(p => p.previewStatus === "fulfilled");
 
   // Load folders when dialog opens
   const loadFolders = useCallback(async () => {
@@ -338,15 +378,103 @@ export default function ProductMockupPage() {
               {/* Left Column - Product & Logo Selection */}
               <div className="lg:col-span-3 space-y-4">
                 <ImagePicker
-                  title={t("productImage")}
+                  title={t("productImages")}
                   icon={<Shirt className="w-4 h-4 text-violet-400" />}
-                  selectedImage={state.productImage}
-                  selectedMimeType={state.productMimeType}
+                  selectedImage={state.products.length > 0 ? state.products[0]?.image : null}
+                  selectedMimeType={state.products.length > 0 ? state.products[0]?.mimeType : "image/png"}
                   onImageSelect={setProductImage}
-                  onClear={clearProductImage}
+                  onClear={clearAllProducts}
                   disabled={state.isProcessing}
                   allowSaveToGallery={true}
+                  multiSelect={true}
+                  onMultiImageSelect={addProducts}
+                  selectedCount={state.products.length}
                 />
+
+                {/* Product List Management */}
+                {state.products.length > 0 && (
+                  <Card className="bg-card/50 backdrop-blur border-border/50">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-sm flex items-center gap-2">
+                          <ImageIcon className="w-3.5 h-3.5 text-violet-400" />
+                          {t("selectedProducts")} ({state.products.length})
+                        </CardTitle>
+                        <div className="flex gap-1">
+                          {/* Add More button */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            onClick={() => setAddMoreDialogOpen(true)}
+                            disabled={state.isProcessing}
+                          >
+                            <Plus className="w-3 h-3 mr-1" />
+                            {t("addMore")}
+                          </Button>
+                          {/* Clear All button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            onClick={clearAllProducts}
+                            disabled={state.isProcessing}
+                          >
+                            {tc("clear")}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
+                        {state.products.map((product, index) => (
+                          <div
+                            key={product.id}
+                            className={cn(
+                              "relative group rounded-md overflow-hidden border cursor-pointer transition-all",
+                              state.activeProductId === product.id
+                                ? "border-violet-500 ring-1 ring-violet-500/50"
+                                : "border-border/50 hover:border-violet-500/50"
+                            )}
+                            onClick={() => setActiveProduct(product.id)}
+                          >
+                            <div className="aspect-square bg-muted/30">
+                              <img
+                                src={product.image}
+                                alt={`Product ${index + 1}`}
+                                className="w-full h-full object-contain"
+                              />
+                            </div>
+                            {/* Remove button - always visible */}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-0.5 right-0.5 h-5 w-5 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeProduct(product.id);
+                              }}
+                              disabled={state.isProcessing}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                            {/* Index badge */}
+                            <div className="absolute bottom-0.5 left-0.5 bg-black/60 text-white text-[10px] px-1 rounded">
+                              #{index + 1}
+                            </div>
+                            {/* Active indicator */}
+                            {state.activeProductId === product.id && (
+                              <div className="absolute inset-0 border-2 border-violet-500 rounded-md pointer-events-none" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {t("clickToSelectActive")}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <ImagePicker
                   title={t("logo")}
@@ -367,11 +495,25 @@ export default function ProductMockupPage() {
                   logoImage={state.logoImage}
                   logoPosition={state.logoPosition}
                   selectedTemplate={null}
-                  onPositionChange={updateLogoPosition}
-                  onResetPosition={resetLogoPosition}
+                  onPositionChange={(updates) => {
+                    // Update for active product in multi-product mode
+                    if (state.activeProductId) {
+                      updateProductLogoPosition(state.activeProductId, updates);
+                    }
+                    updateLogoPosition(updates);
+                  }}
+                  onResetPosition={() => {
+                    if (state.activeProductId) {
+                      resetProductLogoPosition(state.activeProductId);
+                    }
+                    resetLogoPosition();
+                  }}
                   onUploadLogo={setLogoImage}
                   generatedMockup={state.firstMockup}
                   isProcessing={state.isProcessing}
+                  products={state.products}
+                  activeProductId={state.activeProductId}
+                  onActiveProductChange={setActiveProduct}
                 />
               </div>
 
@@ -389,8 +531,8 @@ export default function ProductMockupPage() {
                     <Button
                       className="w-full bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 text-white shadow-lg shadow-violet-500/25"
                       size="lg"
-                      disabled={!canGenerateFirst}
-                      onClick={() => generateFirstMockup()}
+                      disabled={!canGeneratePreviews}
+                      onClick={() => generateAllPreviews()}
                     >
                       {state.isProcessing ? (
                         <>
@@ -403,12 +545,18 @@ export default function ProductMockupPage() {
                             }}
                             className="w-4 h-4 mr-2 border-2 border-white/30 border-t-white rounded-full"
                           />
-                          {t("generatingPreview")}
+                          {state.processingCount > 0 
+                            ? `${t("generating")} (${state.processingCount}/${state.totalToProcess})`
+                            : t("generatingPreview")
+                          }
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4 mr-2" />
-                          {t("generatePreview")}
+                          {state.products.length > 1 
+                            ? `${t("generateAllPreviews")} (${state.products.length})`
+                            : t("generatePreview")
+                          }
                         </>
                       )}
                     </Button>
@@ -418,10 +566,13 @@ export default function ProductMockupPage() {
                       <div className="flex items-center gap-2">
                         <div
                           className={`w-2 h-2 rounded-full ${
-                            state.productImage ? "bg-green-500" : "bg-gray-500"
+                            state.products.length > 0 ? "bg-green-500" : "bg-gray-500"
                           }`}
                         />
-                        {t("productImage")} {state.productImage ? "✓" : t("required")}
+                        {t("productImages")} {state.products.length > 0 
+                          ? `✓ (${state.products.length})` 
+                          : t("required")
+                        }
                       </div>
                       <div className="flex items-center gap-2">
                         <div
@@ -431,13 +582,21 @@ export default function ProductMockupPage() {
                         />
                         {t("logo")} {state.logoImage ? "✓" : t("required")}
                       </div>
+                      {hasAnyPreviews && (
+                        <div className="flex items-center gap-2 text-green-400">
+                          <div className="w-2 h-2 rounded-full bg-green-500" />
+                          {t("previewsGenerated", { 
+                            count: state.products.filter(p => p.previewStatus === "fulfilled").length 
+                          })}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
 
-                {/* Confirm Mockup (show when first mockup is generated) */}
+                {/* Confirm Mockup / Go to Preview Phase */}
                 <AnimatePresence>
-                  {state.firstMockup && (
+                  {hasAnyPreviews && (
                     <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -447,20 +606,23 @@ export default function ProductMockupPage() {
                         <CardHeader className="pb-3">
                           <CardTitle className="text-base flex items-center gap-2 text-green-300">
                             <Check className="w-4 h-4" />
-                            {t("previewReady")}
+                            {t("previewsReady")}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <p className="text-sm text-muted-foreground">
-                            {t("previewReadyDescription")}
+                            {t("previewsReadyDescription", {
+                              count: state.products.filter(p => p.previewStatus === "fulfilled").length,
+                              total: state.products.length
+                            })}
                           </p>
                           <Button
                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                             size="lg"
-                            onClick={confirmMockup}
+                            onClick={() => goToPhase("preview")}
                           >
                             <Check className="w-4 h-4 mr-2" />
-                            {t("confirmAndSelectColors")}
+                            {t("reviewAndSelectColors")}
                           </Button>
                           <p className="text-xs text-muted-foreground text-center">
                             {t("adjustAndRegenerate")}
@@ -496,7 +658,200 @@ export default function ProductMockupPage() {
           </motion.div>
         )}
 
-        {/* ========== PHASE 2: RECOLOR ========== */}
+        {/* ========== PHASE 2: PREVIEW ========== */}
+        {state.phase === "preview" && (
+          <motion.div
+            key="preview-phase"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+          >
+            {/* Back Button */}
+            <Button
+              variant="ghost"
+              className="mb-4 text-muted-foreground hover:text-white"
+              onClick={() => goToPhase("compose")}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              {t("backToLogoPlacement")}
+            </Button>
+
+            {/* Info Alert */}
+            <Alert className="bg-violet-500/10 border-violet-500/30 mb-6">
+              <Sparkles className="h-4 w-4 text-violet-400" />
+              <AlertDescription className="text-sm text-muted-foreground">
+                {t("previewPhaseDescription")}
+              </AlertDescription>
+            </Alert>
+
+            {/* Previews Grid */}
+            <Card className="bg-card/50 backdrop-blur border-border/50 mb-6">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <ImageIcon className="w-4 h-4 text-violet-400" />
+                    {t("generatedPreviews")}
+                    <Badge variant="secondary" className="ml-2">
+                      {state.products.filter(p => p.previewStatus === "fulfilled").length}/{state.products.length}
+                    </Badge>
+                  </CardTitle>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={selectAllProducts}
+                      className="h-7 text-xs"
+                    >
+                      {tc("selectAll")}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={deselectAllProducts}
+                      className="h-7 text-xs"
+                    >
+                      {tc("deselectAll")}
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  {state.products.map((product, index) => (
+                    <motion.div
+                      key={product.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className={cn(
+                        "group relative rounded-lg overflow-hidden border-2 cursor-pointer transition-all",
+                        product.selected
+                          ? "border-violet-500 ring-2 ring-violet-500/30"
+                          : "border-border/50 hover:border-violet-500/50"
+                      )}
+                      onClick={() => toggleProductSelection(product.id)}
+                    >
+                      <div className="aspect-square bg-muted/30">
+                        {product.previewStatus === "fulfilled" && product.preview ? (
+                          <img
+                            src={product.preview}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-full object-contain"
+                          />
+                        ) : product.previewStatus === "processing" ? (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <LoadingSpinner size="md" />
+                          </div>
+                        ) : product.previewStatus === "rejected" ? (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
+                            <X className="w-6 h-6 text-red-400 mb-1" />
+                            <span className="text-xs text-red-400 text-center">
+                              {product.previewError || t("failedToGenerate")}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 h-6 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                regenerateProductPreview(product.id);
+                              }}
+                            >
+                              {tc("retry")}
+                            </Button>
+                          </div>
+                        ) : (
+                          <img
+                            src={product.image}
+                            alt={`Product ${index + 1}`}
+                            className="w-full h-full object-contain opacity-50"
+                          />
+                        )}
+                      </div>
+                      
+                      {/* Edit button - go back to adjust this product */}
+                      {product.previewStatus === "fulfilled" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-1 left-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            clearProductPreview(product.id);
+                            setActiveProduct(product.id);
+                            goToPhase("compose");
+                          }}
+                          title={t("editProduct")}
+                        >
+                          <Pencil className="w-3 h-3 text-white" />
+                        </Button>
+                      )}
+                      
+                      {/* Selection indicator */}
+                      <div className={cn(
+                        "absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center transition-all",
+                        product.selected 
+                          ? "bg-violet-500" 
+                          : "bg-black/50 border border-white/30"
+                      )}>
+                        {product.selected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      
+                      {/* Zoom button */}
+                      {product.previewStatus === "fulfilled" && product.preview && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute bottom-1 right-1 h-6 w-6 p-0 bg-black/50 hover:bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEnlargedPreview(product.preview);
+                          }}
+                          title={t("enlargePreview")}
+                        >
+                          <Maximize2 className="w-3 h-3 text-white" />
+                        </Button>
+                      )}
+                      
+                      {/* Product number */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2 pointer-events-none">
+                        <span className="text-xs text-white">
+                          #{index + 1}
+                        </span>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Actions */}
+                <div className="mt-6 flex items-center justify-between border-t border-border/50 pt-4">
+                  <span className="text-sm text-muted-foreground">
+                    {t("selectedForColors", { count: selectedProducts.length })}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={downloadSelectedPreviews}
+                      disabled={selectedProducts.length === 0}
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      {tc("download")} ({selectedProducts.length})
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600"
+                      onClick={() => goToPhase("recolor")}
+                      disabled={selectedProducts.length === 0}
+                    >
+                      <Palette className="w-4 h-4 mr-2" />
+                      {t("selectColors")}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* ========== PHASE 3: RECOLOR ========== */}
         {state.phase === "recolor" && (
           <motion.div
             key="recolor-phase"
@@ -508,7 +863,7 @@ export default function ProductMockupPage() {
             <Button
               variant="ghost"
               className="mb-4 text-muted-foreground hover:text-white"
-              onClick={goBackToCompose}
+              onClick={() => goToPhase("preview")}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t("backToLogoPlacement")}
@@ -524,35 +879,45 @@ export default function ProductMockupPage() {
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Left Column - Confirmed Mockup Preview */}
+              {/* Left Column - Selected Products Preview */}
               <div className="lg:col-span-4">
                 <Card className="bg-card/50 backdrop-blur border-border/50">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base flex items-center gap-2">
                       <ImageIcon className="w-4 h-4 text-green-400" />
-                      {t("confirmedMockup")}
+                      {t("selectedProducts")}
+                      <Badge variant="secondary" className="ml-2">
+                        {selectedProducts.length}
+                      </Badge>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {state.confirmedMockup && (
-                      <div className="relative rounded-lg overflow-hidden bg-muted/30 border border-border/50">
-                        <img
-                          src={state.confirmedMockup}
-                          alt="Confirmed mockup"
-                          className="w-full h-auto object-contain"
-                        />
-                        <div className="absolute top-2 right-2 bg-green-500/90 px-2 py-1 rounded text-xs font-medium text-white flex items-center gap-1">
-                          <Check className="w-3 h-3" />
-                          {t("confirmed")}
+                    {/* Show grid of selected products */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {selectedProducts.slice(0, 4).map((product, index) => (
+                        <div 
+                          key={product.id}
+                          className="relative rounded-lg overflow-hidden bg-muted/30 border border-border/50 aspect-square"
+                        >
+                          <img
+                            src={product.preview || product.image}
+                            alt={`Selected ${index + 1}`}
+                            className="w-full h-full object-contain"
+                          />
                         </div>
-                      </div>
+                      ))}
+                    </div>
+                    {selectedProducts.length > 4 && (
+                      <p className="text-xs text-muted-foreground text-center">
+                        +{selectedProducts.length - 4} {t("more")}
+                      </p>
                     )}
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        onClick={downloadConfirmedMockup}
+                        onClick={downloadSelectedPreviews}
                       >
                         {tc("download")}
                       </Button>
@@ -619,7 +984,7 @@ export default function ProductMockupPage() {
                     <div className="text-xs text-muted-foreground space-y-1">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
-                        {t("baseMockupConfirmed")} ✓
+                        {t("productsSelected", { count: selectedProducts.length })} ✓
                       </div>
                       <div className="flex items-center gap-2">
                         <div
@@ -631,6 +996,14 @@ export default function ProductMockupPage() {
                         />
                         {t("colorsSelected", { count: state.selectedColors.length })}
                       </div>
+                      {selectedProducts.length > 0 && state.selectedColors.length > 0 && (
+                        <div className="flex items-center gap-2 text-violet-400 pt-1">
+                          <Sparkles className="w-3 h-3" />
+                          {t("totalVariants", { 
+                            count: selectedProducts.length * state.selectedColors.length 
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {state.selectedColors.length > 0 && (
@@ -650,17 +1023,23 @@ export default function ProductMockupPage() {
               </div>
             </div>
 
-            {/* Results Gallery */}
+            {/* Results Gallery - Aggregate variants from all selected products */}
             <div className="mt-6">
-              <ResultsGallery
-                results={state.results}
-                processingCount={state.processingCount}
-                onDownload={downloadMockup}
-                onSave={() => {}}
-                onRetry={retryMockup}
-                onDownloadAll={downloadAllMockups}
-                onSaveAll={() => {}}
-              />
+              {(() => {
+                // Collect all variants from selected products
+                const allVariants = selectedProducts.flatMap(p => p.variants);
+                return (
+                  <ResultsGallery
+                    results={allVariants.length > 0 ? allVariants : state.results}
+                    processingCount={state.processingCount}
+                    onDownload={downloadMockup}
+                    onSave={() => {}}
+                    onRetry={retryMockup}
+                    onDownloadAll={downloadSelectedVariants}
+                    onSaveAll={() => {}}
+                  />
+                );
+              })()}
             </div>
           </motion.div>
         )}
@@ -689,7 +1068,7 @@ export default function ProductMockupPage() {
               </Button>
 
               {folderPath.map((folder, index) => (
-                <div key={folder.id} className="flex items-center gap-0.5">
+                <div key={`${folder.id}-${index}`} className="flex items-center gap-0.5">
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                   <Button
                     variant="ghost"
@@ -845,6 +1224,58 @@ export default function ProductMockupPage() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Enlarged Preview Dialog */}
+      <Dialog open={!!enlargedPreview} onOpenChange={() => setEnlargedPreview(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] p-4">
+          <DialogHeader>
+            <DialogTitle>{t("enlargePreview")}</DialogTitle>
+          </DialogHeader>
+          {enlargedPreview && (
+            <div className="relative w-full flex items-center justify-center overflow-auto">
+              <img
+                src={enlargedPreview}
+                alt="Enlarged Preview"
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEnlargedPreview(null)}>
+              {tc("close")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add More Products Dialog */}
+      <Dialog open={addMoreDialogOpen} onOpenChange={setAddMoreDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="w-4 h-4 text-violet-400" />
+              {t("addMoreProducts")}
+            </DialogTitle>
+          </DialogHeader>
+          <ImagePicker
+            title={t("productImages")}
+            icon={<Shirt className="w-4 h-4 text-violet-400" />}
+            selectedImage={null}
+            onImageSelect={(dataUrl, mimeType) => {
+              addProducts([{ dataUrl, mimeType }]);
+              setAddMoreDialogOpen(false);
+            }}
+            onClear={() => {}}
+            disabled={state.isProcessing}
+            allowSaveToGallery={false}
+            multiSelect={true}
+            onMultiImageSelect={(images) => {
+              addProducts(images);
+              setAddMoreDialogOpen(false);
+            }}
+          />
         </DialogContent>
       </Dialog>
     </div>

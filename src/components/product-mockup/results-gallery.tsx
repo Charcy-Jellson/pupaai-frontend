@@ -417,7 +417,7 @@ export function ResultsGallery({
               </Button>
 
               {folderPath.map((folder, index) => (
-                <div key={folder.id} className="flex items-center gap-0.5">
+                <div key={`${folder.id}-${index}`} className="flex items-center gap-0.5">
                   <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
                   <Button
                     variant="ghost"
@@ -618,7 +618,10 @@ function ResultCard({
       )}
     >
       {/* Color indicator */}
-      <div className="h-1.5" style={{ backgroundColor: result.color }} />
+      <div 
+        className="h-1.5 border-b border-border/30" 
+        style={{ backgroundColor: result.color }} 
+      />
 
       {/* Image/Status Area */}
       <div className="aspect-square bg-muted/30 relative">

@@ -18,7 +18,8 @@ import {
   RefreshCw,
   Upload,
 } from "lucide-react";
-import type { LogoPosition, ProductTemplate } from "@/types/mockup";
+import type { LogoPosition, ProductTemplate, ProductItem } from "@/types/mockup";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface LogoCanvasProps {
   productImage: string | null;
@@ -30,6 +31,11 @@ interface LogoCanvasProps {
   onUploadLogo: (imageDataUrl: string, mimeType: string) => void;
   generatedMockup: string | null;
   isProcessing: boolean;
+  
+  // Multi-product support
+  products?: ProductItem[];
+  activeProductId?: string | null;
+  onActiveProductChange?: (productId: string) => void;
 }
 
 export function LogoCanvas({
@@ -42,6 +48,9 @@ export function LogoCanvas({
   onUploadLogo,
   generatedMockup,
   isProcessing,
+  products = [],
+  activeProductId,
+  onActiveProductChange,
 }: LogoCanvasProps) {
   const t = useTranslations("productMockup.canvas");
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,6 +60,34 @@ export function LogoCanvas({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, scale: 1 });
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+
+  // Multi-product mode helpers
+  const isMultiProductMode = products.length > 0;
+  const activeProduct = isMultiProductMode 
+    ? products.find(p => p.id === activeProductId) 
+    : null;
+  const activeIndex = isMultiProductMode 
+    ? products.findIndex(p => p.id === activeProductId) 
+    : -1;
+  
+  // Use active product data if in multi-product mode
+  const currentProductImage = activeProduct?.image || productImage;
+  const currentLogoPosition = activeProduct?.logoPosition || logoPosition;
+  const currentGeneratedMockup = activeProduct?.preview || generatedMockup;
+
+  // Navigate between products
+  const goToPrevProduct = useCallback(() => {
+    if (!onActiveProductChange || products.length === 0) return;
+    const prevIndex = activeIndex > 0 ? activeIndex - 1 : products.length - 1;
+    onActiveProductChange(products[prevIndex].id);
+  }, [onActiveProductChange, products, activeIndex]);
+
+  const goToNextProduct = useCallback(() => {
+    if (!onActiveProductChange || products.length === 0) return;
+    const nextIndex = activeIndex < products.length - 1 ? activeIndex + 1 : 0;
+    onActiveProductChange(products[nextIndex].id);
+  }, [onActiveProductChange, products, activeIndex]);
 
   // Handle file upload for logo
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,12 +134,12 @@ export function LogoCanvas({
     const deltaX = ((clientX - dragStart.x) / rect.width) * 100;
     const deltaY = ((clientY - dragStart.y) / rect.height) * 100;
 
-    const newX = Math.max(0, Math.min(100, logoPosition.x + deltaX));
-    const newY = Math.max(0, Math.min(100, logoPosition.y + deltaY));
+    const newX = Math.max(0, Math.min(100, currentLogoPosition.x + deltaX));
+    const newY = Math.max(0, Math.min(100, currentLogoPosition.y + deltaY));
 
     onPositionChange({ x: newX, y: newY });
     setDragStart({ x: clientX, y: clientY });
-  }, [isDragging, dragStart, logoPosition.x, logoPosition.y, onPositionChange]);
+  }, [isDragging, dragStart, currentLogoPosition.x, currentLogoPosition.y, onPositionChange]);
 
   // Handle drag end
   const handleDragEnd = useCallback(() => {
@@ -120,8 +157,8 @@ export function LogoCanvas({
     const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
     const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
     
-    setResizeStart({ x: clientX, y: clientY, scale: logoPosition.scale });
-  }, [logoImage, isProcessing, logoPosition.scale]);
+    setResizeStart({ x: clientX, y: clientY, scale: currentLogoPosition.scale });
+  }, [logoImage, isProcessing, currentLogoPosition.scale]);
 
   // Handle resize move
   const handleResizeMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -182,15 +219,33 @@ export function LogoCanvas({
     };
   }, [isResizing, handleResizeMove, handleResizeEnd]);
 
+  // Track canvas size for consistent logo sizing with backend
+  useEffect(() => {
+    if (!containerRef.current) return;
+    
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setCanvasSize({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      }
+    });
+    
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
+
   // Scale controls
   const handleScaleChange = useCallback((value: number[]) => {
     onPositionChange({ scale: value[0] });
   }, [onPositionChange]);
 
   const handleScaleStep = useCallback((delta: number) => {
-    const newScale = Math.max(0.1, Math.min(3, logoPosition.scale + delta));
+    const newScale = Math.max(0.1, Math.min(3, currentLogoPosition.scale + delta));
     onPositionChange({ scale: newScale });
-  }, [logoPosition.scale, onPositionChange]);
+  }, [currentLogoPosition.scale, onPositionChange]);
 
   // Rotation controls
   const handleRotationChange = useCallback((value: number[]) => {
@@ -198,15 +253,100 @@ export function LogoCanvas({
   }, [onPositionChange]);
 
   const handleRotationStep = useCallback((delta: number) => {
-    const newRotation = logoPosition.rotation + delta;
+    const newRotation = currentLogoPosition.rotation + delta;
     onPositionChange({ rotation: newRotation });
-  }, [logoPosition.rotation, onPositionChange]);
+  }, [currentLogoPosition.rotation, onPositionChange]);
 
   // Display image (generated mockup or preview)
-  const displayImage = generatedMockup || productImage;
+  const displayImage = currentGeneratedMockup || currentProductImage;
+
+  // Calculate logo base size (matches backend gemini_service.py: 20% of product width)
+  // This ensures the preview matches the generated result
+  const baseLogoSize = Math.max(50, canvasSize.width * 0.2);
 
   return (
     <div className="space-y-4">
+      {/* Product Navigation (Multi-product mode) */}
+      {isMultiProductMode && products.length > 1 && (
+        <Card className="bg-card/50 backdrop-blur border-border/50">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToPrevProduct}
+                disabled={isProcessing}
+                className="h-8 w-8"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">
+                  {t("product")} {activeIndex + 1} / {products.length}
+                </span>
+                {activeProduct?.previewStatus === "fulfilled" && (
+                  <span className="px-2 py-0.5 bg-green-500/20 text-green-400 text-xs rounded-full">
+                    ✓ Preview
+                  </span>
+                )}
+                {activeProduct?.previewStatus === "processing" && (
+                  <span className="px-2 py-0.5 bg-violet-500/20 text-violet-400 text-xs rounded-full">
+                    Processing...
+                  </span>
+                )}
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={goToNextProduct}
+                disabled={isProcessing}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Thumbnail strip */}
+            <div className="flex gap-1.5 mt-3 overflow-x-auto pb-1">
+              {products.map((product, index) => (
+                <button
+                  key={product.id}
+                  onClick={() => onActiveProductChange?.(product.id)}
+                  className={cn(
+                    "relative w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all",
+                    product.id === activeProductId
+                      ? "border-violet-500 ring-2 ring-violet-500/30"
+                      : "border-border/50 hover:border-violet-500/50"
+                  )}
+                >
+                  <img
+                    src={product.preview || product.image}
+                    alt={`Product ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {product.previewStatus === "fulfilled" && (
+                    <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-tl flex items-center justify-center">
+                      <span className="text-[8px] text-white">✓</span>
+                    </div>
+                  )}
+                  {product.previewStatus === "processing" && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-violet-500 border-t-transparent rounded-full"
+                      />
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Canvas Area */}
       <Card className="bg-card/50 backdrop-blur border-border/50 overflow-hidden">
         <CardContent className="p-0">
@@ -236,7 +376,7 @@ export function LogoCanvas({
             )}
 
             {/* Logo Overlay (only show when not displaying generated mockup) */}
-            {productImage && logoImage && !generatedMockup && (
+            {currentProductImage && logoImage && !currentGeneratedMockup && (
               <div
                 ref={logoRef}
                 onMouseDown={handleDragStart}
@@ -247,16 +387,20 @@ export function LogoCanvas({
                   isProcessing && "pointer-events-none opacity-50"
                 )}
                 style={{
-                  left: `${logoPosition.x}%`,
-                  top: `${logoPosition.y}%`,
-                  transform: `translate(-50%, -50%) scale(${logoPosition.scale}) rotate(${logoPosition.rotation}deg)`,
+                  left: `${currentLogoPosition.x}%`,
+                  top: `${currentLogoPosition.y}%`,
+                  transform: `translate(-50%, -50%) scale(${currentLogoPosition.scale}) rotate(${currentLogoPosition.rotation}deg)`,
                 }}
               >
                 <div className="relative">
                   <img
                     src={logoImage}
                     alt="Logo"
-                    className="max-w-[150px] max-h-[150px] pointer-events-none"
+                    className="pointer-events-none"
+                    style={{
+                      maxWidth: `${baseLogoSize}px`,
+                      maxHeight: `${baseLogoSize}px`,
+                    }}
                     draggable={false}
                   />
                   {/* Drag indicator border */}
@@ -318,7 +462,7 @@ export function LogoCanvas({
             )}
 
             {/* Instructions */}
-            {productImage && !logoImage && !generatedMockup && (
+            {currentProductImage && !logoImage && !currentGeneratedMockup && (
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-center text-white/80">
                   <Upload className="w-8 h-8 mx-auto mb-2" />
@@ -368,7 +512,7 @@ export function LogoCanvas({
               variant="outline"
               className="w-full h-16 border-dashed border-2 hover:border-violet-500/50"
               onClick={() => fileInputRef.current?.click()}
-              disabled={isProcessing || !productImage}
+              disabled={isProcessing || !currentProductImage}
             >
               <div className="flex flex-col items-center gap-1">
                 <Upload className="w-4 h-4" />
@@ -380,7 +524,7 @@ export function LogoCanvas({
       </Card>
 
       {/* Position Controls (only show when logo is present and no generated mockup) */}
-      {logoImage && !generatedMockup && (
+      {logoImage && !currentGeneratedMockup && (
         <Card className="bg-card/50 backdrop-blur border-border/50">
           <CardContent className="p-4 space-y-4">
             {/* Scale */}
@@ -391,7 +535,7 @@ export function LogoCanvas({
                   {t("scale")}
                 </Label>
                 <span className="text-xs text-muted-foreground">
-                  {Math.round(logoPosition.scale * 100)}%
+                  {Math.round(currentLogoPosition.scale * 100)}%
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -405,7 +549,7 @@ export function LogoCanvas({
                   <ZoomOut className="w-3 h-3" />
                 </Button>
                 <Slider
-                  value={[logoPosition.scale]}
+                  value={[currentLogoPosition.scale]}
                   onValueChange={handleScaleChange}
                   min={0.1}
                   max={3}
@@ -433,7 +577,7 @@ export function LogoCanvas({
                   {t("rotation")}
                 </Label>
                 <span className="text-xs text-muted-foreground">
-                  {Math.round(logoPosition.rotation)}°
+                  {Math.round(currentLogoPosition.rotation)}°
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -447,7 +591,7 @@ export function LogoCanvas({
                   <RotateCcw className="w-3 h-3" />
                 </Button>
                 <Slider
-                  value={[logoPosition.rotation]}
+                  value={[currentLogoPosition.rotation]}
                   onValueChange={handleRotationChange}
                   min={-180}
                   max={180}

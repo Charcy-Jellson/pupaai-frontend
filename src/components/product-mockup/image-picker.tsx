@@ -52,6 +52,12 @@ interface ImagePickerProps {
   disabled?: boolean;
   /** Allow saving the selected image to Gallery */
   allowSaveToGallery?: boolean;
+  /** Enable multi-select mode */
+  multiSelect?: boolean;
+  /** Callback for multi-select mode */
+  onMultiImageSelect?: (images: { dataUrl: string; mimeType: string }[]) => void;
+  /** Number of already selected items (for multi-select mode display) */
+  selectedCount?: number;
 }
 
 export function ImagePicker({
@@ -63,12 +69,19 @@ export function ImagePicker({
   onClear,
   disabled = false,
   allowSaveToGallery = false,
+  multiSelect = false,
+  onMultiImageSelect,
+  selectedCount = 0,
 }: ImagePickerProps) {
   const t = useTranslations("productMockup.imagePicker");
   const tc = useTranslations("common");
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  
+  // Multi-select state for gallery
+  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
+  const [selectedFileData, setSelectedFileData] = useState<Map<string, { url: string; mimeType: string }>>(new Map());
 
   // Gallery state
   const [files, setFiles] = useState<FileRecord[]>([]);
@@ -114,29 +127,101 @@ export function ImagePicker({
     setLoading(false);
   };
 
-  // File upload handler
+  // File upload handler (supports multi-select)
   const handleFileSelect = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
 
-      if (!file.type.startsWith("image/")) {
-        return;
+      const imageFiles = Array.from(files).filter((file) =>
+        file.type.startsWith("image/")
+      );
+
+      if (imageFiles.length === 0) return;
+
+      if (multiSelect && onMultiImageSelect) {
+        // Multi-select mode: process all files
+        const results: { dataUrl: string; mimeType: string }[] = [];
+        
+        for (const file of imageFiles) {
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (event) => resolve(event.target?.result as string);
+            reader.readAsDataURL(file);
+          });
+          results.push({ dataUrl, mimeType: file.type });
+        }
+        
+        onMultiImageSelect(results);
+      } else {
+        // Single select mode: use first file
+        const file = imageFiles[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const result = event.target?.result as string;
+          onImageSelect(result, file.type);
+        };
+        reader.readAsDataURL(file);
       }
-
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        onImageSelect(result, file.type);
-      };
-      reader.readAsDataURL(file);
 
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
     },
-    [onImageSelect]
+    [onImageSelect, onMultiImageSelect, multiSelect]
   );
+
+  // Toggle file selection in gallery (multi-select mode)
+  const toggleFileSelection = useCallback((fileId: string, fileUrl: string, mimeType: string) => {
+    setSelectedFiles((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(fileId)) {
+        newSet.delete(fileId);
+        setSelectedFileData((prevData) => {
+          const newData = new Map(prevData);
+          newData.delete(fileId);
+          return newData;
+        });
+      } else {
+        newSet.add(fileId);
+        setSelectedFileData((prevData) => {
+          const newData = new Map(prevData);
+          newData.set(fileId, { url: fileUrl, mimeType });
+          return newData;
+        });
+      }
+      return newSet;
+    });
+  }, []);
+
+  // Confirm multi-selection from gallery
+  const confirmMultiSelection = useCallback(async () => {
+    if (!onMultiImageSelect || selectedFiles.size === 0) return;
+
+    setLoading(true);
+    const results: { dataUrl: string; mimeType: string }[] = [];
+
+    for (const [, { url, mimeType }] of selectedFileData) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+        results.push({ dataUrl, mimeType: mimeType || blob.type });
+      } catch (error) {
+        console.error("Failed to load image:", error);
+      }
+    }
+
+    onMultiImageSelect(results);
+    setSelectedFiles(new Set());
+    setSelectedFileData(new Map());
+    setLoading(false);
+  }, [onMultiImageSelect, selectedFiles, selectedFileData]);
 
   // Gallery navigation
   const navigateToFolder = (folder: FolderRecord) => {
@@ -369,6 +454,7 @@ export function ImagePicker({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple={multiSelect}
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -381,8 +467,13 @@ export function ImagePicker({
                 <div className="flex flex-col items-center gap-2">
                   <Upload className="w-6 h-6 text-muted-foreground" />
                   <span className="text-xs text-muted-foreground">
-                    {t("clickToUpload")}
+                    {multiSelect ? t("clickToUploadMultiple") : t("clickToUpload")}
                   </span>
+                  {multiSelect && selectedCount > 0 && (
+                    <span className="text-xs text-violet-400">
+                      {t("itemsSelected", { count: selectedCount })}
+                    </span>
+                  )}
                 </div>
               </Button>
             </TabsContent>
@@ -530,19 +621,28 @@ export function ImagePicker({
                     {/* Files */}
                     {files.map((file) => {
                       const fileUrl = getFileUrl(file.storage_path);
+                      const isSelected = selectedFiles.has(file.id);
 
                       return (
                         <motion.div
                           key={file.id}
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
-                          onClick={() =>
-                            !disabled && handleGallerySelect(fileUrl, file.mime_type)
-                          }
+                          onClick={() => {
+                            if (disabled) return;
+                            if (multiSelect) {
+                              toggleFileSelection(file.id, fileUrl, file.mime_type);
+                            } else {
+                              handleGallerySelect(fileUrl, file.mime_type);
+                            }
+                          }}
                           className={cn(
                             "relative aspect-square rounded-lg overflow-hidden",
-                            "border border-border/50 hover:border-violet-500/50",
-                            "bg-muted/30 transition-all cursor-pointer",
+                            "border-2 transition-all cursor-pointer",
+                            isSelected 
+                              ? "border-violet-500 ring-2 ring-violet-500/30" 
+                              : "border-border/50 hover:border-violet-500/50",
+                            "bg-muted/30",
                             disabled && "opacity-50 pointer-events-none"
                           )}
                         >
@@ -552,11 +652,45 @@ export function ImagePicker({
                             className="w-full h-full object-cover"
                           />
                           <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors" />
+                          {multiSelect && (
+                            <div className={cn(
+                              "absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center",
+                              isSelected ? "bg-violet-500" : "bg-black/50 border border-white/30"
+                            )}>
+                              {isSelected && <Check className="w-3 h-3 text-white" />}
+                            </div>
+                          )}
                         </motion.div>
                       );
                     })}
                   </div>
                 </ScrollArea>
+              )}
+
+              {/* Confirm multi-selection button */}
+              {multiSelect && selectedFiles.size > 0 && (
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={confirmMultiSelection}
+                    disabled={disabled || loading}
+                    className="flex-1 bg-violet-500 hover:bg-violet-600"
+                  >
+                    <Check className="w-3.5 h-3.5 mr-1.5" />
+                    {t("addSelected", { count: selectedFiles.size })}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedFiles(new Set());
+                      setSelectedFileData(new Map());
+                    }}
+                    disabled={disabled}
+                  >
+                    {tc("clear")}
+                  </Button>
+                </div>
               )}
             </TabsContent>
           </Tabs>
