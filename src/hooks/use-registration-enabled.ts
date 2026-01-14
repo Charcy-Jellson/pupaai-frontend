@@ -48,3 +48,6 @@ export function useRegistrationEnabled(): RegistrationSettings {
     refresh: fetchSettings,
   };
 }
+
+
+

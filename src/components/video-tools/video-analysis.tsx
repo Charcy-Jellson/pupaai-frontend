@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useLocale } from "next-intl";
+import { useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, 
@@ -60,6 +61,7 @@ export function VideoAnalysis() {
   const t = useTranslations("videoTools.analysis");
   const tc = useTranslations("common");
   const locale = useLocale();
+  const { getToken } = useAuth();
   
   // State
   const [inputMode, setInputMode] = useState<VideoInputMode>("upload");
@@ -234,10 +236,14 @@ export function VideoAnalysis() {
         requestBody.screenshot_mime_type = screenshotFile.type;
       }
       
+      // Get auth token for API request
+      const authToken = await getToken();
+      
       const response = await fetch(`${BACKEND_URL}/api/video/analyze`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         },
         body: JSON.stringify(requestBody),
       });

@@ -69,6 +69,22 @@ async function handleResponse<T>(response: Response): Promise<ApiResponse<T>> {
   };
 }
 
+/**
+ * Build headers with optional authentication token.
+ * Call this with the token from Clerk's getToken() in your component.
+ */
+function buildAuthHeaders(authToken?: string): HeadersInit {
+  const headers: HeadersInit = {
+    "Content-Type": "application/json",
+  };
+  
+  if (authToken) {
+    headers["Authorization"] = `Bearer ${authToken}`;
+  }
+  
+  return headers;
+}
+
 // Build URL with optional model_id parameter for backend
 function buildImageUrl(endpoint: string, modelId?: string): string {
   const url = `${BACKEND_URL}/api/image/${endpoint}`;
@@ -104,13 +120,12 @@ export async function extractLogo(
   imageBase64: string,
   mimeType: string,
   modelId?: string,
-  removeBackground: boolean = true
+  removeBackground: boolean = true,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildImageUrl("extract-logo", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify({
       image_base64: imageBase64,
       mime_type: mimeType,
@@ -131,14 +146,13 @@ export async function removeBackground(
   mimeType: string,
   // modelId is kept for API compatibility but not used - always uses local rembg
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _modelId?: string
+  _modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   // Use the local rembg endpoint instead of AI models
   const response = await fetch(`${BACKEND_URL}/api/image/remove-background-local`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify({
       image_base64: imageBase64,
       mime_type: mimeType,
@@ -151,13 +165,12 @@ export async function removeBackground(
 export async function removeLogo(
   imageBase64: string,
   mimeType: string,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildImageUrl("remove-logo", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify({
       image_base64: imageBase64,
       mime_type: mimeType,
@@ -189,13 +202,12 @@ export async function generateMockup(
   logoMimeType: string,
   logoPosition: LogoPositionPayload,
   targetColor?: string,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildMockupUrl("generate", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify({
       product_image_base64: productImageBase64,
       product_mime_type: productMimeType,
@@ -224,13 +236,12 @@ export async function recolorMockup(
   mockupImageBase64: string,
   mockupMimeType: string,
   targetColor: string,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildMockupUrl("recolor", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify({
       mockup_image_base64: mockupImageBase64,
       mockup_mime_type: mockupMimeType,
@@ -276,13 +287,12 @@ export interface DressModelRequest {
  */
 export async function generateFashionModel(
   options: GenerateModelRequest,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildModelStudioUrl("generate-model", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify(options),
   });
 
@@ -294,13 +304,12 @@ export async function generateFashionModel(
  */
 export async function dressModel(
   request: DressModelRequest,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const response = await fetch(buildModelStudioUrl("dress-model", modelId), {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
 
@@ -330,7 +339,8 @@ export interface EditLogoRequest {
  */
 export async function generateLogo(
   request: GenerateLogoRequest,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const url = modelId 
     ? `${BACKEND_URL}/api/logo-studio/generate?model_id=${modelId}`
@@ -338,9 +348,7 @@ export async function generateLogo(
     
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
 
@@ -352,7 +360,8 @@ export async function generateLogo(
  */
 export async function editLogo(
   request: EditLogoRequest,
-  modelId?: string
+  modelId?: string,
+  authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
   const url = modelId 
     ? `${BACKEND_URL}/api/logo-studio/edit?model_id=${modelId}`
@@ -360,9 +369,7 @@ export async function editLogo(
     
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
 
