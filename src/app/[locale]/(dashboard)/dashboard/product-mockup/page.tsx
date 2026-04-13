@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -56,6 +56,7 @@ import { LoadingSpinner } from "@/components/common/loading-spinner";
 
 export default function ProductMockupPage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { toast } = useToast();
   const pathname = usePathname();
   const t = useTranslations("productMockup");
@@ -102,7 +103,7 @@ export default function ProductMockupPage() {
     retryMockup,
     // Utils
     clearError,
-  } = useMockupEditor();
+  } = useMockupEditor(getToken);
 
   // Save dialog state for confirmed mockup
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);

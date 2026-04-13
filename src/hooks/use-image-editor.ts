@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { ImageEditorState, ImageOperation } from "@/types";
 import { generateId } from "@/lib/utils";
 import * as api from "@/lib/api";
@@ -13,7 +13,19 @@ const initialState: ImageEditorState = {
   isProcessing: false,
 };
 
-export function useImageEditor() {
+/**
+ * Type for the getAuthToken function from Clerk's useAuth hook
+ */
+export type GetAuthTokenFn = () => Promise<string | null>;
+
+/**
+ * Image editor hook with optional authentication support.
+ * @param getAuthToken - Optional function to get auth token (from Clerk's useAuth().getToken)
+ */
+export function useImageEditor(getAuthToken?: GetAuthTokenFn) {
+  // Store getAuthToken in a ref to avoid stale closures
+  const getAuthTokenRef = useRef(getAuthToken);
+  getAuthTokenRef.current = getAuthToken;
   const [state, setState] = useState<ImageEditorState>(initialState);
 
   const setImage = useCallback((imageDataUrl: string, mimeType: string) => {
@@ -308,7 +320,9 @@ export function useImageEditor() {
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.extractLogo(base64Data, state.mimeType, modelId, removeBackground);
+      // Get auth token if getAuthToken function is provided
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+      const response = await api.extractLogo(base64Data, state.mimeType, modelId, removeBackground, authToken || undefined);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -332,7 +346,9 @@ export function useImageEditor() {
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.removeBackground(base64Data, state.mimeType, modelId);
+      // Get auth token if getAuthToken function is provided
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+      const response = await api.removeBackground(base64Data, state.mimeType, modelId, authToken || undefined);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -356,7 +372,9 @@ export function useImageEditor() {
 
     try {
       const base64Data = state.currentImage.split(",")[1];
-      const response = await api.removeLogo(base64Data, state.mimeType, modelId);
+      // Get auth token if getAuthToken function is provided
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+      const response = await api.removeLogo(base64Data, state.mimeType, modelId, authToken || undefined);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;

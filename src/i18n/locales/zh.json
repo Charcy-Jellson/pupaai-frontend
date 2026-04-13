@@ -276,6 +276,20 @@
       "savedCount": "已保存 {count} 张图片到「{folder}」。",
       "saveCount": "保存 {count} 张图片",
       "downloadStarted": "正在下载 {count} 张图片..."
+    },
+    "download": {
+      "title": "下载设置",
+      "description": "为 {count} 张已选图片配置下载选项",
+      "format": "格式",
+      "formatHint": {
+        "png": "PNG：无损压缩，支持透明度，文件较大",
+        "jpeg": "JPEG：有损压缩，不支持透明度，文件较小",
+        "webp": "WebP：现代格式，支持透明度，文件最小"
+      },
+      "quality": "质量",
+      "qualityHint": "质量越高，文件越大",
+      "browserTip": "提示：如需选择保存位置，请在浏览器设置中开启「每次下载询问保存位置」。",
+      "downloadCount": "下载 ({count})"
     }
   },
   "productMockup": {

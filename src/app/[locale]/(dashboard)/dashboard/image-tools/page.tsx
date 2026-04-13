@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMultiImageEditor } from "@/hooks/use-multi-image-editor";
@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 import { 
   Upload, 
   FolderOpen, 
@@ -50,8 +51,9 @@ import {
 
 export default function ImageToolsPage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { toast } = useToast();
-  const editor = useMultiImageEditor();
+  const editor = useMultiImageEditor(getToken);
   const { role } = useUserRole();
   const pathname = usePathname();
   const t = useTranslations("imageTools");
@@ -79,6 +81,11 @@ export default function ImageToolsPage() {
   // Add More Dialog
   const [addMoreDialogOpen, setAddMoreDialogOpen] = useState(false);
   const [addMoreTab, setAddMoreTab] = useState<"upload" | "gallery">("upload");
+  
+  // Download Dialog
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false);
+  const [downloadFormat, setDownloadFormat] = useState<"png" | "jpeg" | "webp">("png");
+  const [downloadQuality, setDownloadQuality] = useState(92);
 
   // Get derived state
   const selectedImages = editor.getSelectedImages();
@@ -92,6 +99,7 @@ export default function ImageToolsPage() {
     setSaveDialogOpen(false);
     setShowNewFolderInput(false);
     setAddMoreDialogOpen(false);
+    setDownloadDialogOpen(false);
   }, [pathname]);
 
   // Load user folders
@@ -226,9 +234,15 @@ export default function ImageToolsPage() {
     }
   };
 
-  // Download selected images
+  // Open download dialog
   const handleDownloadSelected = () => {
-    editor.downloadSelectedImages();
+    setDownloadDialogOpen(true);
+  };
+  
+  // Execute download with selected format and quality
+  const executeDownload = () => {
+    editor.downloadSelectedImages(downloadFormat, downloadQuality / 100);
+    setDownloadDialogOpen(false);
     toast({
       title: tc("download"),
       description: t("multiImage.downloadStarted", { count: selectedImages.length }),
@@ -658,6 +672,102 @@ export default function ImageToolsPage() {
               />
             </TabsContent>
           </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Download Dialog */}
+      <Dialog open={downloadDialogOpen} onOpenChange={setDownloadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Download className="w-5 h-5 text-violet-400" />
+              {t("download.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("download.description", { count: selectedImages.length })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 py-4">
+            {/* Format Selection */}
+            <div className="space-y-3">
+              <Label>{t("download.format")}</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Button
+                  variant={downloadFormat === "png" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDownloadFormat("png")}
+                  className="w-full"
+                >
+                  PNG
+                </Button>
+                <Button
+                  variant={downloadFormat === "jpeg" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDownloadFormat("jpeg")}
+                  className="w-full"
+                >
+                  JPEG
+                </Button>
+                <Button
+                  variant={downloadFormat === "webp" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDownloadFormat("webp")}
+                  className="w-full"
+                >
+                  WebP
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {downloadFormat === "png" && t("download.formatHint.png")}
+                {downloadFormat === "jpeg" && t("download.formatHint.jpeg")}
+                {downloadFormat === "webp" && t("download.formatHint.webp")}
+              </p>
+            </div>
+            
+            {/* Quality Slider (only for JPEG and WebP) */}
+            {downloadFormat !== "png" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>{t("download.quality")}</Label>
+                  <span className="text-sm text-muted-foreground">{downloadQuality}%</span>
+                </div>
+                <Slider
+                  value={[downloadQuality]}
+                  onValueChange={(value) => setDownloadQuality(value[0])}
+                  min={10}
+                  max={100}
+                  step={5}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">
+                  {t("download.qualityHint")}
+                </p>
+              </div>
+            )}
+            
+            {/* Browser tip */}
+            <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+              <p className="text-xs text-muted-foreground">
+                {t("download.browserTip")}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDownloadDialogOpen(false)}
+            >
+              {tc("cancel")}
+            </Button>
+            <Button
+              variant="gradient"
+              onClick={executeDownload}
+              disabled={selectedImages.length === 0}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t("download.downloadCount", { count: selectedImages.length })}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

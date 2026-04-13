@@ -81,7 +81,7 @@ async function runWithConcurrency<T>(
   return results;
 }
 
-export function useMockupEditor() {
+export function useMockupEditor(getToken: () => Promise<string | null>) {
   const [state, setState] = useState<MockupEditorState>(initialState);
 
   // ===========================================================================
@@ -348,6 +348,7 @@ export function useMockupEditor() {
 
       try {
         const productBase64 = product.image.split(",")[1];
+        const authToken = await getToken() || undefined;
 
         const response = await api.generateMockup(
           productBase64,
@@ -356,7 +357,8 @@ export function useMockupEditor() {
           state.logoMimeType,
           product.logoPosition,
           undefined,
-          modelId
+          modelId,
+          authToken
         );
 
         if (response.success && response.data) {
@@ -400,7 +402,7 @@ export function useMockupEditor() {
       processingCount: 0,
       phase: "preview",
     }));
-  }, [state.products, state.logoImage, state.logoMimeType]);
+  }, [state.products, state.logoImage, state.logoMimeType, getToken]);
 
   /**
    * Regenerate preview for a single product
@@ -421,6 +423,7 @@ export function useMockupEditor() {
     try {
       const productBase64 = product.image.split(",")[1];
       const logoBase64 = state.logoImage.split(",")[1];
+      const authToken = await getToken() || undefined;
 
       const response = await api.generateMockup(
         productBase64,
@@ -429,7 +432,8 @@ export function useMockupEditor() {
         state.logoMimeType,
         product.logoPosition,
         undefined,
-        modelId
+        modelId,
+        authToken
       );
 
       if (response.success && response.data) {
@@ -460,7 +464,7 @@ export function useMockupEditor() {
         ),
       }));
     }
-  }, [state.products, state.logoImage, state.logoMimeType]);
+  }, [state.products, state.logoImage, state.logoMimeType, getToken]);
 
   // ===========================================================================
   // Color Variants (Batch with Concurrency Control)
@@ -547,11 +551,13 @@ export function useMockupEditor() {
           }));
 
           try {
+            const authToken = await getToken() || undefined;
             const response = await api.recolorMockup(
               mockupBase64,
               "image/png",
               color.hex,
-              modelId
+              modelId,
+              authToken
             );
 
             if (response.success && response.data) {
@@ -608,7 +614,7 @@ export function useMockupEditor() {
       isProcessing: false,
       processingCount: 0,
     }));
-  }, [state.products, state.selectedColors]);
+  }, [state.products, state.selectedColors, getToken]);
 
   // ===========================================================================
   // Download Utilities

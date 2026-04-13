@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { 
   MultiImageItem, 
   MultiImageEditorState, 
@@ -20,7 +20,19 @@ const initialState: MultiImageEditorState = {
 // Maximum concurrent AI requests
 const AI_CONCURRENCY_LIMIT = 3;
 
-export function useMultiImageEditor() {
+/**
+ * Type for the getAuthToken function from Clerk's useAuth hook
+ */
+export type GetAuthTokenFn = () => Promise<string | null>;
+
+/**
+ * Multi-image editor hook with optional authentication support.
+ * @param getAuthToken - Optional function to get auth token (from Clerk's useAuth().getToken)
+ */
+export function useMultiImageEditor(getAuthToken?: GetAuthTokenFn) {
+  // Store getAuthToken in a ref to avoid stale closures
+  const getAuthTokenRef = useRef(getAuthToken);
+  getAuthTokenRef.current = getAuthToken;
   const [state, setState] = useState<MultiImageEditorState>(initialState);
 
   // Add multiple images
@@ -425,9 +437,12 @@ export function useMultiImageEditor() {
       const imageIds = selectedImages.map((img) => img.id);
       setImagesProcessing(imageIds, true);
 
+      // Get auth token once for all requests
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+
       const tasks = selectedImages.map((imgData) => async () => {
         const base64Data = imgData.currentImage.split(",")[1];
-        const response = await api.removeBackground(base64Data, imgData.mimeType, modelId);
+        const response = await api.removeBackground(base64Data, imgData.mimeType, modelId, authToken || undefined);
 
         if (response.success && response.data) {
           const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -466,9 +481,12 @@ export function useMultiImageEditor() {
       const imageIds = selectedImages.map((img) => img.id);
       setImagesProcessing(imageIds, true);
 
+      // Get auth token once for all requests
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+
       const tasks = selectedImages.map((imgData) => async () => {
         const base64Data = imgData.currentImage.split(",")[1];
-        const response = await api.extractLogo(base64Data, imgData.mimeType, modelId, removeBackground);
+        const response = await api.extractLogo(base64Data, imgData.mimeType, modelId, removeBackground, authToken || undefined);
 
         if (response.success && response.data) {
           const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -503,9 +521,12 @@ export function useMultiImageEditor() {
       const imageIds = selectedImages.map((img) => img.id);
       setImagesProcessing(imageIds, true);
 
+      // Get auth token once for all requests
+      const authToken = getAuthTokenRef.current ? await getAuthTokenRef.current() : undefined;
+
       const tasks = selectedImages.map((imgData) => async () => {
         const base64Data = imgData.currentImage.split(",")[1];
-        const response = await api.removeLogo(base64Data, imgData.mimeType, modelId);
+        const response = await api.removeLogo(base64Data, imgData.mimeType, modelId, authToken || undefined);
 
         if (response.success && response.data) {
           const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -532,27 +553,53 @@ export function useMultiImageEditor() {
     [state.images, addOperationToImage, setImagesProcessing, setImageError]
   );
 
-  // Download all selected images
-  const downloadSelectedImages = useCallback(() => {
+  // Download all selected images with format and quality options
+  const downloadSelectedImages = useCallback((
+    format: 'png' | 'jpeg' | 'webp' = 'png',
+    quality: number = 0.92
+  ) => {
     const selectedImages = state.images.filter((img) => img.isSelected);
     
+    const mimeType = `image/${format}`;
+    const extension = format === 'jpeg' ? 'jpg' : format;
+    
     selectedImages.forEach((img, index) => {
-      setTimeout(() => {
+      setTimeout(async () => {
         try {
-          // Convert base64 to Blob for reliable download
-          const base64Data = img.currentImage.split(",")[1];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          // Load image to canvas for format conversion
+          const image = new Image();
+          image.src = img.currentImage;
+          
+          await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = reject;
+          });
+          
+          const canvas = document.createElement("canvas");
+          canvas.width = image.width;
+          canvas.height = image.height;
+          const ctx = canvas.getContext("2d")!;
+          
+          // For JPEG, fill with white background (no transparency support)
+          if (format === 'jpeg') {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
           }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: img.mimeType });
+          
+          ctx.drawImage(image, 0, 0);
+          
+          // Convert to blob with specified format and quality
+          const blob = await new Promise<Blob>((resolve, reject) => {
+            canvas.toBlob(
+              (b) => b ? resolve(b) : reject(new Error("Failed to create blob")),
+              mimeType,
+              format === 'png' ? undefined : quality
+            );
+          });
           
           // Create download link
           const url = URL.createObjectURL(blob);
           const link = document.createElement("a");
-          const extension = img.mimeType.split("/")[1] || "png";
           link.href = url;
           link.download = `${img.fileName || `image-${index + 1}`}.${extension}`;
           document.body.appendChild(link);

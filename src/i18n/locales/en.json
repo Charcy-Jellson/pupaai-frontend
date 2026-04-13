@@ -276,6 +276,20 @@
       "savedCount": "Saved {count} image(s) to \"{folder}\".",
       "saveCount": "Save {count} Image(s)",
       "downloadStarted": "Downloading {count} image(s)..."
+    },
+    "download": {
+      "title": "Download Settings",
+      "description": "Configure download options for {count} selected image(s)",
+      "format": "Format",
+      "formatHint": {
+        "png": "PNG: Lossless, supports transparency, larger file size",
+        "jpeg": "JPEG: Lossy compression, no transparency, smaller file size",
+        "webp": "WebP: Modern format, supports transparency, smallest file size"
+      },
+      "quality": "Quality",
+      "qualityHint": "Higher quality means larger file size",
+      "browserTip": "Tip: To choose save location, enable \"Ask where to save each file\" in your browser settings.",
+      "downloadCount": "Download ({count})"
     }
   },
   "productMockup": {
