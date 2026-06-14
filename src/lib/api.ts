@@ -377,6 +377,70 @@ export async function editLogo(
 }
 
 // =============================================================================
+// Nail Studio API (calls FastAPI backend)
+// =============================================================================
+
+function buildNailStudioUrl(endpoint: string, modelId?: string): string {
+  const url = `${BACKEND_URL}/api/nail-studio/${endpoint}`;
+  if (modelId) {
+    return `${url}?model_id=${modelId}`;
+  }
+  return url;
+}
+
+/**
+ * Change the background of a nail art / press-on nail image
+ */
+export async function changeNailBackground(
+  nailImageBase64: string,
+  nailMimeType: string,
+  backgroundImageBase64: string,
+  backgroundMimeType: string,
+  boxOption: string = "keep_original",
+  modelId?: string,
+  authToken?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildNailStudioUrl("change-background", modelId), {
+    method: "POST",
+    headers: buildAuthHeaders(authToken),
+    body: JSON.stringify({
+      nail_image_base64: nailImageBase64,
+      nail_mime_type: nailMimeType,
+      background_image_base64: backgroundImageBase64,
+      background_mime_type: backgroundMimeType,
+      box_option: boxOption,
+    }),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+/**
+ * Apply nail art / press-on nail design onto a hand photo
+ */
+export async function applyNailToHand(
+  nailImageBase64: string,
+  nailMimeType: string,
+  handImageBase64: string,
+  handMimeType: string,
+  modelId?: string,
+  authToken?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildNailStudioUrl("apply-to-hand", modelId), {
+    method: "POST",
+    headers: buildAuthHeaders(authToken),
+    body: JSON.stringify({
+      nail_image_base64: nailImageBase64,
+      nail_mime_type: nailMimeType,
+      hand_image_base64: handImageBase64,
+      hand_mime_type: handMimeType,
+    }),
+  });
+
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+// =============================================================================
 // Health Check (FastAPI backend)
 // =============================================================================
 
