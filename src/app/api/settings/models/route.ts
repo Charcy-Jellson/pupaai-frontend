@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin, checkAdmin } from "@/lib/supabase-admin";
+
+const supabase = supabaseAdmin();
 
 export type TaskType = "image_processing" | "video_processing" | "text_processing";
 export type ProviderType = "gemini" | "openai";
+
+const PROVIDERS: ProviderType[] = ["gemini", "openai"];
+const TASK_TYPES: TaskType[] = [
+  "image_processing",
+  "video_processing",
+  "text_processing",
+];
 
 export interface AIModel {
   id: string;
@@ -61,10 +70,15 @@ export async function GET(request: NextRequest) {
 
 /**
  * POST /api/settings/models
- * Create a new AI model
+ * Create a new AI model (admin only)
  */
 export async function POST(request: NextRequest) {
   try {
+    const admin = await checkAdmin();
+    if ("error" in admin) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
+    }
+
     const body = await request.json();
 
     const { provider, model_id, display_name, task_type, description, is_active = true } = body;
@@ -73,6 +87,20 @@ export async function POST(request: NextRequest) {
     if (!provider || !model_id || !display_name || !task_type) {
       return NextResponse.json(
         { error: "Missing required fields: provider, model_id, display_name, task_type" },
+        { status: 400 }
+      );
+    }
+
+    // Validate enum values
+    if (!PROVIDERS.includes(provider)) {
+      return NextResponse.json(
+        { error: `Invalid provider. Must be one of: ${PROVIDERS.join(", ")}` },
+        { status: 400 }
+      );
+    }
+    if (!TASK_TYPES.includes(task_type)) {
+      return NextResponse.json(
+        { error: `Invalid task_type. Must be one of: ${TASK_TYPES.join(", ")}` },
         { status: 400 }
       );
     }
@@ -109,8 +137,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
-
-
-
-

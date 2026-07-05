@@ -63,17 +63,23 @@ const TASK_TYPE_INFO: Record<TaskType, { label: string; icon: typeof Image; feat
   image_processing: {
     label: "Image",
     icon: Image,
-    features: ["remove_background", "extract_logo", "remove_logo"],
+    features: [
+      "remove_background", "extract_logo", "remove_logo",
+      "apply_logo_to_product", "recolor_product",
+      "generate_fashion_model", "dress_model",
+      "generate_logo", "edit_logo",
+      "change_nail_background", "apply_nail_to_hand",
+    ],
   },
   video_processing: {
     label: "Video",
     icon: Video,
-    features: [],
+    features: ["video_analysis"],
   },
   text_processing: {
     label: "Text",
     icon: FileText,
-    features: [],
+    features: ["social_metrics"],
   },
 };
 
@@ -81,6 +87,16 @@ const FEATURE_LABELS: Record<string, string> = {
   remove_background: "Remove Background",
   extract_logo: "Extract Logo",
   remove_logo: "Remove Logo/Watermark",
+  apply_logo_to_product: "Apply Logo to Product (Mockup)",
+  recolor_product: "Recolor Product",
+  generate_fashion_model: "Generate Fashion Model",
+  dress_model: "Dress Model",
+  generate_logo: "Generate Logo",
+  edit_logo: "Edit Logo",
+  change_nail_background: "Change Nail Background",
+  apply_nail_to_hand: "Apply Nail to Hand",
+  video_analysis: "Video Analysis",
+  social_metrics: "Social Metrics (Screenshot)",
 };
 
 export default function AdminSettingsPage() {

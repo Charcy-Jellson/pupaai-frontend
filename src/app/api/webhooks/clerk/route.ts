@@ -1,26 +1,8 @@
 import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
-import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
-
-// Create a Supabase admin client that bypasses RLS
-// This requires SUPABASE_SERVICE_KEY to be set
-function createSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error("Missing Supabase configuration for webhook");
-  }
-
-  return createClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
+import { supabaseAdmin } from "@/lib/supabase-admin";
 
 export async function POST(req: Request) {
   // Get the webhook secret from environment variables
@@ -76,14 +58,14 @@ export async function POST(req: Request) {
   const eventType = evt.type;
 
   try {
-    const supabaseAdmin = createSupabaseAdmin();
+    const supabase = supabaseAdmin();
 
     if (eventType === "user.created") {
       const { id } = evt.data;
 
       // Create user role record with defaults: role='user', tier='free'
       // Email and name are managed by Clerk, not stored here
-      const { error } = await supabaseAdmin.from("user_roles").upsert(
+      const { error } = await supabase.from("user_roles").upsert(
         {
           user_id: id,
           role: "user",
@@ -110,7 +92,7 @@ export async function POST(req: Request) {
 
       if (id) {
         // Delete user role record
-        const { error } = await supabaseAdmin
+        const { error } = await supabase
           .from("user_roles")
           .delete()
           .eq("user_id", id);
@@ -139,4 +121,3 @@ export async function POST(req: Request) {
     );
   }
 }
-

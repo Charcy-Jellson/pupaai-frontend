@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin, checkAdmin } from "@/lib/supabase-admin";
+
+const supabase = supabaseAdmin();
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -38,10 +40,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
 /**
  * PUT /api/settings/models/[id]
- * Update a specific model
+ * Update a specific model (admin only)
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const admin = await checkAdmin();
+    if ("error" in admin) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
+    }
+
     const { id } = await params;
     const body = await request.json();
 
@@ -87,10 +94,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
 /**
  * DELETE /api/settings/models/[id]
- * Delete a specific model
+ * Delete a specific model (admin only)
  */
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
+    const admin = await checkAdmin();
+    if ("error" in admin) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
+    }
+
     const { id } = await params;
 
     // Check if model exists
@@ -122,8 +134,3 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
-
-
-
-
-

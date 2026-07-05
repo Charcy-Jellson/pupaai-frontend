@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Sparkles, AlertCircle, Save, Folder, Home, ChevronRight, ArrowLeft, Plus, X } from "lucide-react";
@@ -37,6 +37,7 @@ import { cn } from "@/lib/utils";
 
 export default function LogoStudioPage() {
   const { user } = useUser();
+  const { getToken } = useAuth();
   const { toast } = useToast();
   const pathname = usePathname();
   const t = useTranslations("logoStudio");
@@ -55,7 +56,7 @@ export default function LogoStudioPage() {
     removeFromHistory,
     clearHistory,
     downloadLogo,
-  } = useLogoStudio();
+  } = useLogoStudio(getToken);
 
   // Save dialog state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);

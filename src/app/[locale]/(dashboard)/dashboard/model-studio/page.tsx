@@ -1,5 +1,6 @@
 "use client";
 
+import { useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,6 +29,7 @@ import {
 export default function ModelStudioPage() {
   const t = useTranslations("modelStudio");
   const tc = useTranslations("common");
+  const { getToken } = useAuth();
   const {
     state,
     // Model
@@ -53,7 +55,7 @@ export default function ModelStudioPage() {
     // Reset
     resetEditor,
     clearError,
-  } = useModelStudio();
+  } = useModelStudio(getToken);
 
   const canGenerate =
     state.modelImage &&

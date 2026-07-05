@@ -12,7 +12,7 @@ import { generateLogo, editLogo } from "@/lib/api";
 /**
  * Hook for managing Logo Studio state and operations
  */
-export function useLogoStudio() {
+export function useLogoStudio(getToken?: () => Promise<string | null>) {
   const [state, setState] = useState<LogoStudioState>(DEFAULT_LOGO_STUDIO_STATE);
 
   // =========================================================================
@@ -76,7 +76,7 @@ export function useLogoStudio() {
         description: state.description,
         style: state.selectedStyle || undefined,
         colors: state.selectedColors.length > 0 ? state.selectedColors : undefined,
-      });
+      }, undefined, (await getToken?.()) ?? undefined);
 
       if (result.success && result.data) {
         const dataUrl = `data:${result.data.mime_type};base64,${result.data.image_base64}`;
@@ -138,7 +138,7 @@ export function useLogoStudio() {
         image_base64: base64,
         mime_type: state.currentMimeType,
         instruction: state.editInstruction,
-      });
+      }, undefined, (await getToken?.()) ?? undefined);
 
       if (result.success && result.data) {
         const dataUrl = `data:${result.data.mime_type};base64,${result.data.image_base64}`;

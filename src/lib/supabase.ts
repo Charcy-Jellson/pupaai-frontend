@@ -1,9 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 
+declare global {
+  interface Window {
+    Clerk?: { session?: { getToken: () => Promise<string | null> } };
+  }
+}
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Attach the Clerk session token so Supabase RLS can identify the user
+// (auth.jwt()->>'sub' == Clerk user id). Requires the Clerk↔Supabase native
+// integration to be enabled. On the server (no window) this returns null and
+// the client falls back to the anon key — server code must use supabase-admin.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  accessToken: async () => {
+    if (typeof window === "undefined") return null;
+    return (await window.Clerk?.session?.getToken()) ?? null;
+  },
+});
 
 // Storage bucket name
 export const STORAGE_BUCKET = "pupa-ai-media";

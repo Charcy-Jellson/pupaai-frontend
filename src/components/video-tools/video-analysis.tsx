@@ -35,7 +35,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { VideoAnalysisResult, SocialMetrics, VideoInputMode } from "@/types/video-tools";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001";
 
 // Supported video platforms for context
 const VIDEO_PLATFORMS = [

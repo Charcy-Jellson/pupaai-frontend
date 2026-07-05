@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { supabaseAdmin, checkAdmin } from "@/lib/supabase-admin";
+
+const supabase = supabaseAdmin();
 
 interface RouteParams {
   params: Promise<{ taskType: string; feature: string }>;
@@ -7,10 +9,15 @@ interface RouteParams {
 
 /**
  * PUT /api/settings/models/defaults/[taskType]/[feature]
- * Set the default model for a specific feature
+ * Set the default model for a specific feature (admin only)
  */
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
+    const admin = await checkAdmin();
+    if ("error" in admin) {
+      return NextResponse.json({ error: admin.error }, { status: admin.status });
+    }
+
     const { taskType, feature } = await params;
     const body = await request.json();
     const { model_id } = body;
@@ -71,8 +78,3 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     );
   }
 }
-
-
-
-
-

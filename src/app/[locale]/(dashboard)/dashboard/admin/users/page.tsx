@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import { RoleGate } from "@/components/common/role-gate";
-import { supabase, setUserRole, updateUserRoleOnly, updateUserTier, type UserRole, type UserTier } from "@/lib/supabase";
+import type { UserRole, UserTier } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -153,12 +153,9 @@ export default function UserManagementPage() {
   const loadUsers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
+      const res = await fetch("/api/admin/users");
+      if (!res.ok) throw new Error("Failed to load users");
+      const { users: data } = await res.json();
       setUsers(data || []);
     } catch (error) {
       toast({
@@ -176,7 +173,12 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     try {
-      const success = await setUserRole(newUserId.trim(), newUserRole, newUserTier);
+      const res = await fetch("/api/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: newUserId.trim(), role: newUserRole, tier: newUserTier }),
+      });
+      const success = res.ok;
       
       if (success) {
         toast({
@@ -204,7 +206,12 @@ export default function UserManagementPage() {
 
   const handleUpdateRole = async (userId: string, role: UserRole) => {
     try {
-      const success = await updateUserRoleOnly(userId, role);
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, role }),
+      });
+      const success = res.ok;
       
       if (success) {
         setUsers((prev) =>
@@ -228,7 +235,12 @@ export default function UserManagementPage() {
 
   const handleUpdateTier = async (userId: string, tier: UserTier) => {
     try {
-      const success = await updateUserTier(userId, tier);
+      const res = await fetch("/api/admin/users", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: userId, tier }),
+      });
+      const success = res.ok;
       
       if (success) {
         setUsers((prev) =>
@@ -255,12 +267,11 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userToDelete.user_id);
-
-      if (error) throw error;
+      const res = await fetch(
+        `/api/admin/users?user_id=${encodeURIComponent(userToDelete.user_id)}`,
+        { method: "DELETE" }
+      );
+      if (!res.ok) throw new Error("Failed to remove user");
 
       setUsers((prev) => prev.filter((u) => u.user_id !== userToDelete.user_id));
       toast({

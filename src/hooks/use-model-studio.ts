@@ -39,7 +39,7 @@ const initialState: ModelStudioState = {
   error: null,
 };
 
-export function useModelStudio() {
+export function useModelStudio(getToken?: () => Promise<string | null>) {
   const [state, setState] = useState<ModelStudioState>(initialState);
 
   // ==========================================================================
@@ -99,7 +99,7 @@ export function useModelStudio() {
         hair_length: modelGenerationOptions.hairLength,
         glasses: modelGenerationOptions.glasses,
         age_group: modelGenerationOptions.ageGroup,
-      }, aiModelId);
+      }, aiModelId, (await getToken?.()) ?? undefined);
 
       if (response.success && response.data) {
         const imageDataUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -258,7 +258,7 @@ export function useModelStudio() {
           scene: selectedScene,
           pose,
           pants_type: selectedPantsType,
-        }, aiModelId);
+        }, aiModelId, (await getToken?.()) ?? undefined);
 
         if (response.success && response.data) {
           const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
@@ -340,7 +340,7 @@ export function useModelStudio() {
         scene: result.scene,
         pose: result.pose,
         pants_type: result.pantsType,
-      }, aiModelId);
+      }, aiModelId, (await getToken?.()) ?? undefined);
 
       if (response.success && response.data) {
         const resultUrl = `data:${response.data.mime_type};base64,${response.data.image_base64}`;
