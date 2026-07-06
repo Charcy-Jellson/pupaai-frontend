@@ -648,6 +648,14 @@ export interface GeneratePoseSpriteRequest {
   composition: SpriteComposition;
   pose: SpritePose;
   action?: string;
+  /** Optional reference image (base64) to override the character's hairstyle for this batch */
+  hair_override_image_base64?: string;
+  /** Optional text description to override the character's hairstyle (ignored if an image override is set) */
+  hair_override_desc?: string;
+  /** Optional reference image (base64) to override the character's outfit for this batch */
+  outfit_override_image_base64?: string;
+  /** Optional text description to override the character's outfit (ignored if an image override is set) */
+  outfit_override_desc?: string;
 }
 
 export interface FuseSceneRequest {

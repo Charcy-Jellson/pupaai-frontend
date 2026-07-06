@@ -175,12 +175,15 @@ export default function HairStudioPage() {
             onDelete={hs.removeCharacter}
             onRename={hs.renameCharacterInList}
             onCreateNew={() => setBuildingNew(true)}
+            onImportCard={hs.importCharacterCard}
           />
         ))}
 
       {hs.state.step === 2 && (
         <SpriteGenerator
           sprites={hs.state.sprites}
+          overrides={hs.state.overrides}
+          onOverridesChange={hs.setOverrides}
           onGenerate={hs.generateSprites}
           onRegenerate={hs.regenerateSprite}
           onNext={() => hs.setStep(3)}

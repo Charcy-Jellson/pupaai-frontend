@@ -8,13 +8,14 @@ import {
 } from "@/lib/supabase";
 import {
   HairStudioState, DEFAULT_CARD_BUILDER, CardBuilderState, SpriteItem, SpriteShot, FuseResultItem,
-  PlacementTransform, HairStudioStep,
+  PlacementTransform, HairStudioStep, SpriteOverrides, DEFAULT_SPRITE_OVERRIDES,
 } from "@/types/hair-studio";
 
 const initialState: HairStudioState = {
   step: 1, characters: [], selectedCharacter: null, selectedCardDataUrl: null,
   cardBuilder: DEFAULT_CARD_BUILDER, isGeneratingCard: false, generatedCardDataUrl: null,
-  sprites: [], backgroundDataUrl: null, imageSize: "1K", results: [], error: null,
+  sprites: [], overrides: DEFAULT_SPRITE_OVERRIDES, backgroundDataUrl: null, imageSize: "1K",
+  results: [], error: null,
 };
 
 let idCounter = 0;
@@ -99,13 +100,50 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
     }
     setState((p) => ({
       // A newly-created character is always different from whatever was
-      // previously active, so drop any stale sprites/results from before.
+      // previously active, so drop any stale sprites/results/overrides from before.
       ...p, characters: [row, ...p.characters], selectedCharacter: row,
       selectedCardDataUrl: p.generatedCardDataUrl, generatedCardDataUrl: null,
       cardBuilder: DEFAULT_CARD_BUILDER, step: 2, sprites: [], results: [],
+      overrides: DEFAULT_SPRITE_OVERRIDES,
     }));
     return true;
   }, [userId, state.generatedCardDataUrl, state.cardBuilder]);
+
+  // Import an existing character card image (user already has a finished
+  // card and wants to skip Step 1 generation). Mirrors saveCharacter's
+  // shape/behavior: uploads the card asset, creates the row with all
+  // descs/refs null, then selects it and jumps straight to Step 2.
+  const importCharacterCard = useCallback(async (cardDataUrl: string, name: string): Promise<boolean> => {
+    if (!userId) return false;
+    const characterId = crypto.randomUUID();
+    try {
+      const cardPath = await uploadCharacterAsset(userId, characterId, "card", cardDataUrl);
+      if (!cardPath) {
+        setState((p) => ({ ...p, error: "Failed to upload card" }));
+        return false;
+      }
+      const row = await createCharacter(userId, {
+        id: characterId,
+        name: name || `Character ${new Date().toLocaleDateString()}`,
+        card_storage_path: cardPath,
+        face_desc: null, hair_desc: null, outfit_desc: null,
+        face_ref_path: null, hair_ref_path: null, outfit_ref_path: null, seed: 42,
+      });
+      if (!row) {
+        setState((p) => ({ ...p, error: "Failed to save character" }));
+        return false;
+      }
+      setState((p) => ({
+        ...p, characters: [row, ...p.characters], selectedCharacter: row,
+        selectedCardDataUrl: cardDataUrl, step: 2, sprites: [], results: [],
+        overrides: DEFAULT_SPRITE_OVERRIDES,
+      }));
+      return true;
+    } catch (e) {
+      setState((p) => ({ ...p, error: e instanceof Error ? e.message : "Failed to import character" }));
+      return false;
+    }
+  }, [userId]);
 
   const selectCharacter = useCallback(async (c: CharacterRecord) => {
     try {
@@ -117,7 +155,7 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
         const isDifferentCharacter = p.selectedCharacter?.id !== c.id;
         return {
           ...p, selectedCharacter: c, selectedCardDataUrl: dataUrl, step: 2,
-          ...(isDifferentCharacter ? { sprites: [], results: [] } : {}),
+          ...(isDifferentCharacter ? { sprites: [], results: [], overrides: DEFAULT_SPRITE_OVERRIDES } : {}),
         };
       });
     } catch (e) {
@@ -139,6 +177,16 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
 
   // ---- Step 2: sprites ----
 
+  // Build the 4 optional override request fields from current state. An
+  // image (dataUrl) takes priority over the text description when both are
+  // set; empty string/null values are omitted (undefined) from the request.
+  const overrideFieldsOf = (o: SpriteOverrides) => ({
+    hair_override_image_base64: o.hairImage ? stripDataUrl(o.hairImage) : undefined,
+    hair_override_desc: !o.hairImage && o.hairDesc ? o.hairDesc : undefined,
+    outfit_override_image_base64: o.outfitImage ? stripDataUrl(o.outfitImage) : undefined,
+    outfit_override_desc: !o.outfitImage && o.outfitDesc ? o.outfitDesc : undefined,
+  });
+
   const generateSprites = useCallback(async (shots: SpriteShot[]) => {
     const card = state.selectedCardDataUrl;
     if (!card) return;
@@ -154,6 +202,7 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
           card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
           angle: item.angle, composition: item.composition, pose: item.pose,
           action: item.action || undefined,
+          ...overrideFieldsOf(state.overrides),
         }, undefined, await token());
         setState((p) => ({
           ...p,
@@ -169,7 +218,7 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
         }));
       }
     }));
-  }, [state.selectedCardDataUrl, state.selectedCharacter, token]);
+  }, [state.selectedCardDataUrl, state.selectedCharacter, state.overrides, token]);
 
   const regenerateSprite = useCallback(async (spriteId: string, newAction?: string) => {
     const s = state.sprites.find((x) => x.id === spriteId);
@@ -182,6 +231,7 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
         card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
         angle: s.angle, composition: s.composition, pose: s.pose,
         action: (newAction ?? s.action) || undefined,
+        ...overrideFieldsOf(state.overrides),
       }, undefined, await token());
       setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id !== spriteId ? x : (res.success && res.data
         ? { ...x, status: "fulfilled" as const, imageDataUrl: `data:image/png;base64,${res.data.image_base64}` }
@@ -190,7 +240,7 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
       setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id !== spriteId ? x
         : { ...x, status: "rejected" as const, error: e instanceof Error ? e.message : "Failed" }) }));
     }
-  }, [state.sprites, state.selectedCardDataUrl, state.selectedCharacter, token]);
+  }, [state.sprites, state.selectedCardDataUrl, state.selectedCharacter, state.overrides, token]);
 
   // ---- Step 3: fuse ----
 
@@ -235,6 +285,8 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
   const setStep = useCallback((step: HairStudioStep) => setState((p) => ({ ...p, step })), []);
   const setCardBuilder = useCallback((patch: Partial<CardBuilderState>) =>
     setState((p) => ({ ...p, cardBuilder: { ...p.cardBuilder, ...patch } })), []);
+  const setOverrides = useCallback((patch: Partial<SpriteOverrides>) =>
+    setState((p) => ({ ...p, overrides: { ...p.overrides, ...patch } })), []);
   const setBackground = useCallback((dataUrl: string | null) =>
     setState((p) => ({ ...p, backgroundDataUrl: dataUrl })), []);
   const setImageSize = useCallback((s: HairStudioState["imageSize"]) =>
@@ -243,8 +295,8 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
 
   return {
     state, setStep, loadCharacters, selectCharacter, removeCharacter, renameCharacterInList,
-    setCardBuilder, generateCard, saveCharacter,
-    generateSprites, regenerateSprite,
+    setCardBuilder, generateCard, saveCharacter, importCharacterCard,
+    generateSprites, regenerateSprite, setOverrides,
     setBackground, setImageSize, addFuseResult, runFuse,
     clearError,
   };

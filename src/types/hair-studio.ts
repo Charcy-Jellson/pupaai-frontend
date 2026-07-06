@@ -35,6 +35,20 @@ export interface SpriteShot {
   action: string;
 }
 
+// Step 2 batch-level hairstyle/outfit override applied on top of the
+// selected character's card for every shot generated in that batch. An
+// image (dataUrl) takes priority over the text description when both are set.
+export interface SpriteOverrides {
+  hairImage: string | null;   // data URL
+  hairDesc: string;
+  outfitImage: string | null; // data URL
+  outfitDesc: string;
+}
+
+export const DEFAULT_SPRITE_OVERRIDES: SpriteOverrides = {
+  hairImage: null, hairDesc: "", outfitImage: null, outfitDesc: "",
+};
+
 export interface PlacementTransform { x: number; y: number; scale: number }
 
 export interface FuseResultItem {
@@ -57,6 +71,7 @@ export interface HairStudioState {
   isGeneratingCard: boolean;
   generatedCardDataUrl: string | null; // preview before save
   sprites: SpriteItem[];
+  overrides: SpriteOverrides;
   backgroundDataUrl: string | null;
   imageSize: FuseImageSize;
   results: FuseResultItem[];
