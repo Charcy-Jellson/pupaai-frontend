@@ -617,3 +617,72 @@ export async function getProvidersStatus(): Promise<ApiResponse<Record<ProviderT
     };
   }
 }
+
+// =============================================================================
+// Hair Studio API (calls FastAPI backend)
+// =============================================================================
+
+function buildHairStudioUrl(endpoint: string, modelId?: string): string {
+  const url = `${BACKEND_URL}/api/hair-studio/${endpoint}`;
+  return modelId ? `${url}?model_id=${modelId}` : url;
+}
+
+export type SpriteAngle = "front" | "side" | "back" | "three_quarter";
+export type SpriteComposition = "full_body" | "half_body";
+export type SpritePose = "standing" | "sitting";
+export type FuseImageSize = "1K" | "2K" | "4K";
+
+export interface GenerateCardRequest {
+  face_image_base64?: string;
+  hair_image_base64?: string;
+  outfit_image_base64?: string;
+  face_desc?: string;
+  hair_desc?: string;
+  outfit_desc?: string;
+}
+
+export async function generateCharacterCard(
+  request: GenerateCardRequest,
+  modelId?: string,
+  authToken?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildHairStudioUrl("generate-card", modelId), {
+    method: "POST",
+    headers: buildAuthHeaders(authToken),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+export async function generatePoseSprite(
+  request: {
+    card_image_base64: string;
+    card_desc: string;
+    angle: SpriteAngle;
+    composition: SpriteComposition;
+    pose: SpritePose;
+    action?: string;
+  },
+  modelId?: string,
+  authToken?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildHairStudioUrl("generate-sprite", modelId), {
+    method: "POST",
+    headers: buildAuthHeaders(authToken),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<ProcessedImageResponse>(response);
+}
+
+export async function fuseScene(
+  request: { draft_image_base64: string; draft_mime_type?: string; image_size?: FuseImageSize },
+  modelId?: string,
+  authToken?: string
+): Promise<ApiResponse<ProcessedImageResponse>> {
+  const response = await fetch(buildHairStudioUrl("fuse", modelId), {
+    method: "POST",
+    headers: buildAuthHeaders(authToken),
+    body: JSON.stringify(request),
+  });
+  return handleResponse<ProcessedImageResponse>(response);
+}
