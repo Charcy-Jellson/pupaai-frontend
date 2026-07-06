@@ -32,6 +32,11 @@ const readFile = (f: File): Promise<string> =>
     r.readAsDataURL(f);
   });
 
+// Cap the long edge of the cropped background so the composite draft can't
+// blow past Gemini's ~20MB inline limit / the backend's 25MB body cap when a
+// user uploads a high-resolution (e.g. 12MP phone) photo. Never scales up.
+const MAX_OUTPUT_DIMENSION = 2048;
+
 async function cropToAspect(dataUrl: string, ratioW: number, ratioH: number): Promise<string> {
   const img = new Image();
   img.src = dataUrl;
@@ -49,12 +54,20 @@ async function cropToAspect(dataUrl: string, ratioW: number, ratioH: number): Pr
     sh = img.naturalWidth / target;
     sy = (img.naturalHeight - sh) / 2;
   }
+
+  // Scale the output canvas down (never up) so its long edge is capped,
+  // while keeping the exact aspect ratio.
+  const longEdge = Math.max(sw, sh);
+  const scale = Math.min(1, MAX_OUTPUT_DIMENSION / longEdge);
+  const dw = Math.round(sw * scale);
+  const dh = Math.round(sh * scale);
+
   const c = document.createElement("canvas");
-  c.width = sw;
-  c.height = sh;
+  c.width = dw;
+  c.height = dh;
   const ctx = c.getContext("2d");
   if (!ctx) return dataUrl;
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, dw, dh);
   return c.toDataURL("image/png");
 }
 

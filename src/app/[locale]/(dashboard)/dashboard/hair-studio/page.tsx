@@ -197,8 +197,8 @@ export default function HairStudioPage() {
             onSetBackground={hs.setBackground}
             onSetImageSize={hs.setImageSize}
             onCompose={(spriteId, draft, tf) => {
-              const id = hs.addFuseResult(spriteId, hs.state.backgroundDataUrl!, tf, draft);
-              hs.runFuse(id);
+              const item = hs.addFuseResult(spriteId, hs.state.backgroundDataUrl!, tf, draft);
+              hs.runFuse(item);
             }}
             onBack={() => hs.setStep(2)}
           />

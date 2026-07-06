@@ -49,19 +49,24 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
   const generateCard = useCallback(async () => {
     const b = state.cardBuilder;
     setState((p) => ({ ...p, isGeneratingCard: true, error: null }));
-    const res = await api.generateCharacterCard({
-      face_image_base64: b.faceImage ? stripDataUrl(b.faceImage) : undefined,
-      hair_image_base64: b.hairImage ? stripDataUrl(b.hairImage) : undefined,
-      outfit_image_base64: b.outfitImage ? stripDataUrl(b.outfitImage) : undefined,
-      face_desc: b.faceDesc || undefined,
-      hair_desc: b.hairDesc || undefined,
-      outfit_desc: b.outfitDesc || undefined,
-    }, undefined, await token());
-    if (res.success && res.data) {
-      setState((p) => ({ ...p, isGeneratingCard: false,
-        generatedCardDataUrl: `data:${res.data!.mime_type};base64,${res.data!.image_base64}` }));
-    } else {
-      setState((p) => ({ ...p, isGeneratingCard: false, error: res.error || "Failed to generate card" }));
+    try {
+      const res = await api.generateCharacterCard({
+        face_image_base64: b.faceImage ? stripDataUrl(b.faceImage) : undefined,
+        hair_image_base64: b.hairImage ? stripDataUrl(b.hairImage) : undefined,
+        outfit_image_base64: b.outfitImage ? stripDataUrl(b.outfitImage) : undefined,
+        face_desc: b.faceDesc || undefined,
+        hair_desc: b.hairDesc || undefined,
+        outfit_desc: b.outfitDesc || undefined,
+      }, undefined, await token());
+      if (res.success && res.data) {
+        setState((p) => ({ ...p, generatedCardDataUrl: `data:${res.data!.mime_type};base64,${res.data!.image_base64}` }));
+      } else {
+        setState((p) => ({ ...p, error: res.error || "Failed to generate card" }));
+      }
+    } catch (e) {
+      setState((p) => ({ ...p, error: e instanceof Error ? e.message : "Failed to generate card" }));
+    } finally {
+      setState((p) => ({ ...p, isGeneratingCard: false }));
     }
   }, [state.cardBuilder, token]);
 
@@ -85,9 +90,11 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
       return false;
     }
     setState((p) => ({
+      // A newly-created character is always different from whatever was
+      // previously active, so drop any stale sprites/results from before.
       ...p, characters: [row, ...p.characters], selectedCharacter: row,
       selectedCardDataUrl: p.generatedCardDataUrl, generatedCardDataUrl: null,
-      cardBuilder: DEFAULT_CARD_BUILDER, step: 2,
+      cardBuilder: DEFAULT_CARD_BUILDER, step: 2, sprites: [], results: [],
     }));
     return true;
   }, [userId, state.generatedCardDataUrl, state.cardBuilder]);
@@ -98,7 +105,13 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
       const res = await fetch(url);
       if (!res.ok) throw new Error(`Failed to load card (${res.status})`);
       const dataUrl = await blobToDataUrl(await res.blob());
-      setState((p) => ({ ...p, selectedCharacter: c, selectedCardDataUrl: dataUrl, step: 2 }));
+      setState((p) => {
+        const isDifferentCharacter = p.selectedCharacter?.id !== c.id;
+        return {
+          ...p, selectedCharacter: c, selectedCardDataUrl: dataUrl, step: 2,
+          ...(isDifferentCharacter ? { sprites: [], results: [] } : {}),
+        };
+      });
     } catch (e) {
       setState((p) => ({ ...p, error: e instanceof Error ? e.message : "Failed to load character" }));
     }
@@ -130,17 +143,25 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
     }));
     setState((p) => ({ ...p, sprites: [...p.sprites, ...items] }));
     await Promise.allSettled(items.map(async (item) => {
-      const res = await api.generatePoseSprite({
-        card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
-        angle: item.angle, composition: item.composition, pose: item.pose,
-        action: item.action || undefined,
-      }, undefined, await token());
-      setState((p) => ({
-        ...p,
-        sprites: p.sprites.map((s) => s.id !== item.id ? s : (res.success && res.data
-          ? { ...s, status: "fulfilled" as const, imageDataUrl: `data:image/png;base64,${res.data.image_base64}` }
-          : { ...s, status: "rejected" as const, error: res.error || "Failed" })),
-      }));
+      try {
+        const res = await api.generatePoseSprite({
+          card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
+          angle: item.angle, composition: item.composition, pose: item.pose,
+          action: item.action || undefined,
+        }, undefined, await token());
+        setState((p) => ({
+          ...p,
+          sprites: p.sprites.map((s) => s.id !== item.id ? s : (res.success && res.data
+            ? { ...s, status: "fulfilled" as const, imageDataUrl: `data:image/png;base64,${res.data.image_base64}` }
+            : { ...s, status: "rejected" as const, error: res.error || "Failed" })),
+        }));
+      } catch (e) {
+        setState((p) => ({
+          ...p,
+          sprites: p.sprites.map((s) => s.id !== item.id ? s
+            : { ...s, status: "rejected" as const, error: e instanceof Error ? e.message : "Failed" }),
+        }));
+      }
     }));
   }, [state.selectedCardDataUrl, state.selectedCharacter, token]);
 
@@ -150,41 +171,57 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
     if (!s || !card) return;
     setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id === spriteId
       ? { ...x, status: "processing" as const, error: null, action: newAction ?? x.action } : x) }));
-    const res = await api.generatePoseSprite({
-      card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
-      angle: s.angle, composition: s.composition, pose: s.pose,
-      action: (newAction ?? s.action) || undefined,
-    }, undefined, await token());
-    setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id !== spriteId ? x : (res.success && res.data
-      ? { ...x, status: "fulfilled" as const, imageDataUrl: `data:image/png;base64,${res.data.image_base64}` }
-      : { ...x, status: "rejected" as const, error: res.error || "Failed" })) }));
+    try {
+      const res = await api.generatePoseSprite({
+        card_image_base64: stripDataUrl(card), card_desc: cardDescOf(state.selectedCharacter),
+        angle: s.angle, composition: s.composition, pose: s.pose,
+        action: (newAction ?? s.action) || undefined,
+      }, undefined, await token());
+      setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id !== spriteId ? x : (res.success && res.data
+        ? { ...x, status: "fulfilled" as const, imageDataUrl: `data:image/png;base64,${res.data.image_base64}` }
+        : { ...x, status: "rejected" as const, error: res.error || "Failed" })) }));
+    } catch (e) {
+      setState((p) => ({ ...p, sprites: p.sprites.map((x) => x.id !== spriteId ? x
+        : { ...x, status: "rejected" as const, error: e instanceof Error ? e.message : "Failed" }) }));
+    }
   }, [state.sprites, state.selectedCardDataUrl, state.selectedCharacter, token]);
 
   // ---- Step 3: fuse ----
 
   const addFuseResult = useCallback((spriteId: string, backgroundDataUrl: string,
                                      transform: PlacementTransform,
-                                     draftDataUrl: string): string => {
+                                     draftDataUrl: string): FuseResultItem => {
     const item: FuseResultItem = {
       id: genId("fuse"), spriteId, backgroundDataUrl, transform, draftDataUrl,
       resultDataUrl: null, status: "pending", error: null,
     };
     setState((p) => ({ ...p, results: [...p.results, item] }));
-    return item.id;
+    return item;
   }, []);
 
-  const runFuse = useCallback(async (resultId: string) => {
-    const item = state.results.find((r) => r.id === resultId);
+  // Accepts either the full item (fresh from addFuseResult, avoids stale-closure
+  // lookups into state.results) or just a result id (used by the gallery's
+  // fuse/re-fuse buttons, which look the item up from current state).
+  const runFuse = useCallback(async (itemOrId: FuseResultItem | string) => {
+    const resultId = typeof itemOrId === "string" ? itemOrId : itemOrId.id;
+    const item = typeof itemOrId === "string"
+      ? state.results.find((r) => r.id === resultId)
+      : itemOrId;
     if (!item?.draftDataUrl) return;
     setState((p) => ({ ...p, results: p.results.map((r) => r.id === resultId
       ? { ...r, status: "processing" as const, error: null } : r) }));
-    const res = await api.fuseScene({
-      draft_image_base64: stripDataUrl(item.draftDataUrl),
-      draft_mime_type: "image/png", image_size: state.imageSize,
-    }, undefined, await token());
-    setState((p) => ({ ...p, results: p.results.map((r) => r.id !== resultId ? r : (res.success && res.data
-      ? { ...r, status: "fulfilled" as const, resultDataUrl: `data:${res.data.mime_type};base64,${res.data.image_base64}` }
-      : { ...r, status: "rejected" as const, error: res.error || "Failed" })) }));
+    try {
+      const res = await api.fuseScene({
+        draft_image_base64: stripDataUrl(item.draftDataUrl),
+        draft_mime_type: "image/png", image_size: state.imageSize,
+      }, undefined, await token());
+      setState((p) => ({ ...p, results: p.results.map((r) => r.id !== resultId ? r : (res.success && res.data
+        ? { ...r, status: "fulfilled" as const, resultDataUrl: `data:${res.data.mime_type};base64,${res.data.image_base64}` }
+        : { ...r, status: "rejected" as const, error: res.error || "Failed" })) }));
+    } catch (e) {
+      setState((p) => ({ ...p, results: p.results.map((r) => r.id !== resultId ? r
+        : { ...r, status: "rejected" as const, error: e instanceof Error ? e.message : "Failed" }) }));
+    }
   }, [state.results, state.imageSize, token]);
 
   // ---- misc ----
