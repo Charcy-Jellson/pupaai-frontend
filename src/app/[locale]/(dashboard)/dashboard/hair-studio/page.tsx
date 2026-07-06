@@ -19,8 +19,7 @@ import {
 import { SelectFolderDialog } from "@/components/common/select-folder-dialog";
 import { saveFileFromDataUrl } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import type { HairStudioStep } from "@/types/hair-studio";
-import type { FuseResultItem } from "@/types/hair-studio";
+import type { HairStudioStep, FuseResultItem } from "@/types/hair-studio";
 
 const STEPS: { id: HairStudioStep; labelKey: string }[] = [
   { id: 1, labelKey: "steps.character" },
