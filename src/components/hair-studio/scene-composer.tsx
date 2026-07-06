@@ -77,6 +77,8 @@ export function SceneComposer({
   const [selectedSpriteId, setSelectedSpriteId] = useState<string | null>(
     () => fulfilledSprites[0]?.id ?? null
   );
+  const [originalBg, setOriginalBg] = useState<string | null>(null);
+  const [selectedAspect, setSelectedAspect] = useState<string | null>(null);
 
   const selectedSprite =
     fulfilledSprites.find((s) => s.id === selectedSpriteId) ?? fulfilledSprites[0];
@@ -86,13 +88,17 @@ export function SceneComposer({
     e.target.value = "";
     if (!file) return;
     const dataUrl = await readFile(file);
+    setOriginalBg(dataUrl);
+    setSelectedAspect(null);
     onSetBackground(dataUrl);
   };
 
   const handleAspectClick = async (ratio: (typeof ASPECT_RATIOS)[number]) => {
-    if (!backgroundDataUrl) return;
+    const source = originalBg ?? backgroundDataUrl;
+    if (!source) return;
     const [w, h] = ratio.split(":").map(Number);
-    const cropped = await cropToAspect(backgroundDataUrl, w, h);
+    const cropped = await cropToAspect(source, w, h);
+    setSelectedAspect(ratio);
     onSetBackground(cropped);
   };
 
@@ -126,8 +132,11 @@ export function SceneComposer({
                 {ASPECT_RATIOS.map((ratio) => (
                   <button key={ratio} type="button" onClick={() => handleAspectClick(ratio)}>
                     <Badge
-                      variant="outline"
-                      className="cursor-pointer px-3 py-1.5 text-sm hover:bg-muted/50"
+                      variant={selectedAspect === ratio ? "default" : "outline"}
+                      className={cn(
+                        "cursor-pointer px-3 py-1.5 text-sm transition-colors",
+                        selectedAspect !== ratio && "hover:bg-muted/50"
+                      )}
                     >
                       {ratio}
                     </Badge>
@@ -184,9 +193,7 @@ export function SceneComposer({
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">
-              Generate sprites first to place them into a scene.
-            </p>
+            <p className="text-sm text-muted-foreground">{t("noSprites")}</p>
           )}
         </CardContent>
       </Card>

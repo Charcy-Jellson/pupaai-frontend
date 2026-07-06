@@ -60,7 +60,7 @@ export function HairResultsGallery({
 
                 {result.status === "rejected" && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60 p-2 text-center">
-                    <p className="text-xs text-destructive-foreground">{result.error}</p>
+                    <p className="text-xs text-destructive-foreground">{result.error || t("fuseFailed")}</p>
                   </div>
                 )}
               </div>
