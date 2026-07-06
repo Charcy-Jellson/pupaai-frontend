@@ -1014,6 +1014,9 @@
       "sitting": "坐姿"
     },
     "actionPlaceholder": "描述姿势或动作（可选）",
+    "shotLabel": "镜头 {count}",
+    "addShot": "添加镜头",
+    "removeShot": "移除镜头",
     "generateSprites": "生成精灵图",
     "regenerate": "重新生成",
     "nextCompose": "下一步：合成",

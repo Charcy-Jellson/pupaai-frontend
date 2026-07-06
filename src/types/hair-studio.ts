@@ -25,6 +25,16 @@ export interface SpriteItem {
   error: string | null;
 }
 
+// A single shot request in the Step 2 shot list — each shot carries its own
+// angle + composition + pose + optional action (e.g. one STANDING front +
+// one SITTING back in the same batch).
+export interface SpriteShot {
+  angle: SpriteAngle;
+  composition: SpriteComposition;
+  pose: SpritePose;
+  action: string;
+}
+
 export interface PlacementTransform { x: number; y: number; scale: number }
 
 export interface FuseResultItem {

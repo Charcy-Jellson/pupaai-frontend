@@ -3,9 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -14,23 +12,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ArrowRight, Loader2, RefreshCw, Sparkles } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { ANGLE_OPTIONS, type SpriteItem } from "@/types/hair-studio";
+import { ArrowLeft, ArrowRight, Loader2, Plus, RefreshCw, Sparkles, X } from "lucide-react";
+import { ANGLE_OPTIONS, type SpriteItem, type SpriteShot } from "@/types/hair-studio";
 import type { SpriteAngle, SpriteComposition, SpritePose } from "@/lib/api";
 
 interface SpriteGeneratorProps {
   sprites: SpriteItem[];
-  onGenerate: (
-    angles: SpriteAngle[],
-    composition: SpriteComposition,
-    pose: SpritePose,
-    action: string
-  ) => void;
+  onGenerate: (shots: SpriteShot[]) => void;
   onRegenerate: (id: string, action?: string) => void;
   onNext: () => void;
   onBack: () => void;
 }
+
+const DEFAULT_SHOT: SpriteShot = {
+  angle: "front",
+  composition: "full_body",
+  pose: "standing",
+  action: "",
+};
 
 const CHECKERBOARD = {
   backgroundImage:
@@ -48,28 +47,25 @@ export function SpriteGenerator({
 }: SpriteGeneratorProps) {
   const t = useTranslations("hairStudio");
 
-  const [selectedAngles, setSelectedAngles] = useState<Set<SpriteAngle>>(
-    () => new Set<SpriteAngle>(["front"])
-  );
-  const [composition, setComposition] = useState<SpriteComposition>("full_body");
-  const [pose, setPose] = useState<SpritePose>("standing");
-  const [action, setAction] = useState("");
+  const [shots, setShots] = useState<SpriteShot[]>([{ ...DEFAULT_SHOT }]);
   const [editedActions, setEditedActions] = useState<Record<string, string>>({});
 
-  const toggleAngle = (angle: SpriteAngle) => {
-    setSelectedAngles((prev) => {
-      const next = new Set(prev);
-      if (next.has(angle)) {
-        next.delete(angle);
-      } else {
-        next.add(angle);
-      }
-      return next;
-    });
+  const updateShot = (index: number, patch: Partial<SpriteShot>) => {
+    setShots((prev) => prev.map((s, i) => (i === index ? { ...s, ...patch } : s)));
   };
 
+  const addShot = () => {
+    setShots((prev) => [...prev, { ...prev[prev.length - 1] }]);
+  };
+
+  const removeShot = (index: number) => {
+    setShots((prev) => (prev.length > 1 ? prev.filter((_, i) => i !== index) : prev));
+  };
+
+  const isProcessing = sprites.some((s) => s.status === "processing");
+
   const handleGenerate = () => {
-    onGenerate([...selectedAngles], composition, pose, action);
+    onGenerate(shots);
   };
 
   const getEditedAction = (sprite: SpriteItem) =>
@@ -86,66 +82,92 @@ export function SpriteGenerator({
       {/* Controls */}
       <Card className="bg-card/50 backdrop-blur border-border/50">
         <CardContent className="p-4 space-y-5">
-          <div className="space-y-2">
-            <div className="flex flex-wrap gap-2">
-              {ANGLE_OPTIONS.map((option) => {
-                const isSelected = selectedAngles.has(option.id);
-                return (
-                  <button key={option.id} type="button" onClick={() => toggleAngle(option.id)}>
-                    <Badge
-                      variant={isSelected ? "default" : "outline"}
-                      className={cn(
-                        "cursor-pointer px-3 py-1.5 text-sm transition-colors",
-                        !isSelected && "hover:bg-muted/50"
-                      )}
-                    >
-                      {t(option.labelKey)}
-                    </Badge>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Select
-                value={composition}
-                onValueChange={(v) => setComposition(v as SpriteComposition)}
+          <div className="space-y-3">
+            {shots.map((shot, index) => (
+              <div
+                key={index}
+                className="rounded-lg border border-border/50 bg-background/40 p-3 space-y-3"
               >
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="full_body">{t("composition.full_body")}</SelectItem>
-                  <SelectItem value="half_body">{t("composition.half_body")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("shotLabel", { count: index + 1 })}
+                  </p>
+                  {shots.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      aria-label={t("removeShot")}
+                      onClick={() => removeShot(index)}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  )}
+                </div>
 
-            <div className="space-y-2">
-              <Select value={pose} onValueChange={(v) => setPose(v as SpritePose)}>
-                <SelectTrigger className="h-10">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standing">{t("pose.standing")}</SelectItem>
-                  <SelectItem value="sitting">{t("pose.sitting")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <Select
+                    value={shot.angle}
+                    onValueChange={(v) => updateShot(index, { angle: v as SpriteAngle })}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ANGLE_OPTIONS.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {t(option.labelKey)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={shot.composition}
+                    onValueChange={(v) =>
+                      updateShot(index, { composition: v as SpriteComposition })
+                    }
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full_body">{t("composition.full_body")}</SelectItem>
+                      <SelectItem value="half_body">{t("composition.half_body")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select
+                    value={shot.pose}
+                    onValueChange={(v) => updateShot(index, { pose: v as SpritePose })}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="standing">{t("pose.standing")}</SelectItem>
+                      <SelectItem value="sitting">{t("pose.sitting")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Input
+                  value={shot.action}
+                  onChange={(e) => updateShot(index, { action: e.target.value })}
+                  placeholder={t("actionPlaceholder")}
+                  className="text-sm"
+                />
+              </div>
+            ))}
+
+            <Button type="button" variant="outline" size="sm" onClick={addShot}>
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              {t("addShot")}
+            </Button>
           </div>
 
-          <div className="space-y-2">
-            <Textarea
-              value={action}
-              onChange={(e) => setAction(e.target.value)}
-              placeholder={t("actionPlaceholder")}
-              className="text-sm min-h-[72px]"
-            />
-          </div>
-
-          <Button onClick={handleGenerate} disabled={selectedAngles.size === 0}>
+          <Button onClick={handleGenerate} disabled={shots.length === 0 || isProcessing}>
             <Sparkles className="w-4 h-4 mr-2" />
             {t("generateSprites")}
           </Button>

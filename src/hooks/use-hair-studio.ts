@@ -7,7 +7,7 @@ import {
   uploadCharacterAsset, getFileUrl, type CharacterRecord,
 } from "@/lib/supabase";
 import {
-  HairStudioState, DEFAULT_CARD_BUILDER, CardBuilderState, SpriteItem, FuseResultItem,
+  HairStudioState, DEFAULT_CARD_BUILDER, CardBuilderState, SpriteItem, SpriteShot, FuseResultItem,
   PlacementTransform, HairStudioStep,
 } from "@/types/hair-studio";
 
@@ -139,14 +139,12 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
 
   // ---- Step 2: sprites ----
 
-  const generateSprites = useCallback(async (
-    angles: api.SpriteAngle[], composition: api.SpriteComposition,
-    pose: api.SpritePose, action: string,
-  ) => {
+  const generateSprites = useCallback(async (shots: SpriteShot[]) => {
     const card = state.selectedCardDataUrl;
     if (!card) return;
-    const items: SpriteItem[] = angles.map((angle) => ({
-      id: genId("sprite"), angle, composition, pose, action,
+    const items: SpriteItem[] = shots.map((shot) => ({
+      id: genId("sprite"), angle: shot.angle, composition: shot.composition,
+      pose: shot.pose, action: shot.action,
       imageDataUrl: null, status: "processing", error: null,
     }));
     setState((p) => ({ ...p, sprites: [...p.sprites, ...items] }));

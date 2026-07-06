@@ -1014,6 +1014,9 @@
       "sitting": "Sitting"
     },
     "actionPlaceholder": "Describe a pose or action (optional)",
+    "shotLabel": "Shot {count}",
+    "addShot": "Add shot",
+    "removeShot": "Remove shot",
     "generateSprites": "Generate Sprites",
     "regenerate": "Regenerate",
     "nextCompose": "Next: Compose",
