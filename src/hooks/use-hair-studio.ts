@@ -22,9 +22,10 @@ const genId = (p: string) => `${p}-${Date.now()}-${++idCounter}`;
 const stripDataUrl = (d: string) => d.split(",")[1];
 
 async function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const r = new FileReader();
     r.onloadend = () => resolve(r.result as string);
+    r.onerror = () => reject(r.error);
     r.readAsDataURL(blob);
   });
 }
@@ -92,11 +93,15 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
   }, [userId, state.generatedCardDataUrl, state.cardBuilder]);
 
   const selectCharacter = useCallback(async (c: CharacterRecord) => {
-    // Load the stored card image as a data URL for later API calls
-    const url = getFileUrl(c.card_storage_path);
-    const blob = await (await fetch(url)).blob();
-    const dataUrl = await blobToDataUrl(blob);
-    setState((p) => ({ ...p, selectedCharacter: c, selectedCardDataUrl: dataUrl, step: 2 }));
+    try {
+      const url = getFileUrl(c.card_storage_path);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Failed to load card (${res.status})`);
+      const dataUrl = await blobToDataUrl(await res.blob());
+      setState((p) => ({ ...p, selectedCharacter: c, selectedCardDataUrl: dataUrl, step: 2 }));
+    } catch (e) {
+      setState((p) => ({ ...p, error: e instanceof Error ? e.message : "Failed to load character" }));
+    }
   }, []);
 
   const removeCharacter = useCallback(async (c: CharacterRecord) => {
