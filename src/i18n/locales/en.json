@@ -142,6 +142,7 @@
     "logoStudio": "Logo Studio",
     "videoTools": "Video Tools",
     "nailStudio": "Nail Studio",
+    "hairStudio": "Hair Studio",
     "marketing": "Marketing",
     "seo": "SEO & GEO",
     "system": "System",
@@ -977,6 +978,62 @@
       "batchSaveComplete": "Batch Save Complete",
       "batchSaveDesc": "Saved {saved} of {total} images"
     }
+  },
+  "hairStudio": {
+    "title": "Hair Studio",
+    "subtitle": "AI-powered hairstyle character cards, pose sprites, and scene fusion for salon-ready promo images",
+    "dismiss": "Dismiss",
+    "back": "Back",
+    "newCharacter": "New Character",
+    "characterName": "Character Name",
+    "dims": {
+      "face": "Face",
+      "hair": "Hair",
+      "outfit": "Outfit"
+    },
+    "dimHint": "Upload a reference photo or describe it in words",
+    "generateCard": "Generate Card",
+    "saveToLibrary": "Save to Library",
+    "steps": {
+      "character": "Character",
+      "sprites": "Pose Sprites",
+      "compose": "Compose"
+    },
+    "angles": {
+      "front": "Front",
+      "side": "Side",
+      "back": "Back",
+      "threeQuarter": "Three-Quarter"
+    },
+    "composition": {
+      "full_body": "Full body",
+      "half_body": "Half body"
+    },
+    "pose": {
+      "standing": "Standing",
+      "sitting": "Sitting"
+    },
+    "actionPlaceholder": "Describe a pose or action (optional)",
+    "generateSprites": "Generate Sprites",
+    "regenerate": "Regenerate",
+    "nextCompose": "Next: Compose",
+    "uploadBackground": "Upload Background",
+    "aspect": "Aspect Ratio",
+    "resolution": "Resolution",
+    "noSprites": "No pose sprites available yet. Generate some in the previous step.",
+    "placement": {
+      "size": "Size",
+      "confirm": "Confirm Placement"
+    },
+    "fuse": "Fuse",
+    "refuse": "Re-fuse",
+    "fuseFailed": "Fusion failed",
+    "save": "Save",
+    "download": "Download",
+    "saved": "Saved",
+    "savedDesc": "Image saved to your gallery",
+    "saveFailed": "Save Failed",
+    "saveFailedDesc": "Failed to save the image to gallery"
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. All rights reserved."

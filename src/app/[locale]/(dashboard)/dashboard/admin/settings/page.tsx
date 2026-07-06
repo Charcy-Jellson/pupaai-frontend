@@ -69,6 +69,7 @@ const TASK_TYPE_INFO: Record<TaskType, { label: string; icon: typeof Image; feat
       "generate_fashion_model", "dress_model",
       "generate_logo", "edit_logo",
       "change_nail_background", "apply_nail_to_hand",
+      "generate_character_card", "generate_pose_sprite", "fuse_scene",
     ],
   },
   video_processing: {
@@ -95,6 +96,9 @@ const FEATURE_LABELS: Record<string, string> = {
   edit_logo: "Edit Logo",
   change_nail_background: "Change Nail Background",
   apply_nail_to_hand: "Apply Nail to Hand",
+  generate_character_card: "Character Card",
+  generate_pose_sprite: "Pose Sprite",
+  fuse_scene: "Scene Fusion",
   video_analysis: "Video Analysis",
   social_metrics: "Social Metrics (Screenshot)",
 };

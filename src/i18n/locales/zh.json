@@ -142,6 +142,7 @@
     "logoStudio": "Logo 工作室",
     "videoTools": "视频工具",
     "nailStudio": "穿戴甲工作室",
+    "hairStudio": "发型工作室",
     "marketing": "营销",
     "seo": "SEO & GEO",
     "system": "系统",
@@ -977,6 +978,62 @@
       "batchSaveComplete": "批量保存完成",
       "batchSaveDesc": "已保存 {saved}/{total} 张图片"
     }
+  },
+  "hairStudio": {
+    "title": "发型工作室",
+    "subtitle": "AI 驱动的发型角色卡、姿势精灵图与场景融合，快速生成美发店宣传图",
+    "dismiss": "关闭",
+    "back": "返回",
+    "newCharacter": "新建角色",
+    "characterName": "角色名称",
+    "dims": {
+      "face": "面部",
+      "hair": "发型",
+      "outfit": "服装"
+    },
+    "dimHint": "上传参考图片或用文字描述",
+    "generateCard": "生成角色卡",
+    "saveToLibrary": "保存到角色库",
+    "steps": {
+      "character": "角色",
+      "sprites": "姿势精灵图",
+      "compose": "合成"
+    },
+    "angles": {
+      "front": "正面",
+      "side": "侧面",
+      "back": "背面",
+      "threeQuarter": "四分之三侧面"
+    },
+    "composition": {
+      "full_body": "全身",
+      "half_body": "半身"
+    },
+    "pose": {
+      "standing": "站姿",
+      "sitting": "坐姿"
+    },
+    "actionPlaceholder": "描述姿势或动作（可选）",
+    "generateSprites": "生成精灵图",
+    "regenerate": "重新生成",
+    "nextCompose": "下一步：合成",
+    "uploadBackground": "上传背景",
+    "aspect": "宽高比",
+    "resolution": "分辨率",
+    "noSprites": "暂无姿势精灵图，请先在上一步生成。",
+    "placement": {
+      "size": "大小",
+      "confirm": "确认放置"
+    },
+    "fuse": "融合",
+    "refuse": "重新融合",
+    "fuseFailed": "融合失败",
+    "save": "保存",
+    "download": "下载",
+    "saved": "已保存",
+    "savedDesc": "图片已保存到图库",
+    "saveFailed": "保存失败",
+    "saveFailedDesc": "保存图片到图库失败"
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. 保留所有权利。"
