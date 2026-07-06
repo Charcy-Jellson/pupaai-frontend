@@ -73,6 +73,22 @@ export interface FileRecord {
   created_at: string;
 }
 
+export interface CharacterRecord {
+  id: string;
+  user_id: string;
+  name: string;
+  card_storage_path: string;
+  face_desc: string | null;
+  hair_desc: string | null;
+  outfit_desc: string | null;
+  face_ref_path: string | null;
+  hair_ref_path: string | null;
+  outfit_ref_path: string | null;
+  seed: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ==================== User Role Functions ====================
 
 export async function getUserRole(userId: string): Promise<UserRole> {
@@ -419,6 +435,81 @@ export async function deleteFile(fileId: string, storagePath: string): Promise<b
   }
 
   return true;
+}
+
+// ==================== Character (Hair Studio) Functions ====================
+
+/**
+ * Upload a character asset (card image or a reference image) from a data URL.
+ * Path: users/{userId}/characters/{characterId}/{label}.png
+ */
+export async function uploadCharacterAsset(
+  userId: string,
+  characterId: string,
+  label: "card" | "face_ref" | "hair_ref" | "outfit_ref",
+  dataUrl: string
+): Promise<string | null> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  const path = `users/${userId}/characters/${characterId}/${label}.png`;
+  const { error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(path, blob, { cacheControl: "3600", upsert: true });
+  if (error) {
+    console.error("uploadCharacterAsset error:", error.message);
+    return null;
+  }
+  return path;
+}
+
+export async function createCharacter(
+  userId: string,
+  data: Omit<CharacterRecord, "id" | "user_id" | "created_at" | "updated_at">
+): Promise<CharacterRecord | null> {
+  const { data: row, error } = await supabase
+    .from("characters")
+    .insert({ user_id: userId, ...data })
+    .select()
+    .single();
+  if (error) {
+    console.error("createCharacter error:", error.message);
+    return null;
+  }
+  return row as CharacterRecord;
+}
+
+export async function getUserCharacters(userId: string): Promise<CharacterRecord[]> {
+  const { data, error } = await supabase
+    .from("characters")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("getUserCharacters error:", error);
+    return [];
+  }
+  return data as CharacterRecord[];
+}
+
+export async function renameCharacter(characterId: string, newName: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("characters")
+    .update({ name: newName })
+    .eq("id", characterId);
+  if (error) console.error("renameCharacter error:", error.message);
+  return !error;
+}
+
+export async function deleteCharacter(characterId: string, cardStoragePath: string): Promise<boolean> {
+  // Best-effort storage cleanup (folder prefix), then the row (RLS scopes to owner)
+  const prefix = cardStoragePath.replace(/\/card\.png$/, "");
+  const { data: assets } = await supabase.storage.from(STORAGE_BUCKET).list(prefix);
+  if (assets && assets.length > 0) {
+    await supabase.storage.from(STORAGE_BUCKET).remove(assets.map((a) => `${prefix}/${a.name}`));
+  }
+  const { error } = await supabase.from("characters").delete().eq("id", characterId);
+  if (error) console.error("deleteCharacter error:", error.message);
+  return !error;
 }
 
 // For PUBLIC bucket - direct URL access
