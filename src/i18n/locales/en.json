@@ -1024,6 +1024,8 @@
     "aspect": "Aspect Ratio",
     "resolution": "Resolution",
     "noSprites": "No pose sprites available yet. Generate some in the previous step.",
+    "composeHint": "Select a sprite, position it on the background, then confirm — repeat for each additional sprite to build up multiple fused results.",
+    "composedBadge": "Already composed onto this background",
     "placement": {
       "size": "Size",
       "confirm": "Confirm Placement"

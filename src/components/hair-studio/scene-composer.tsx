@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, AlertCircle, Upload } from "lucide-react";
+import { ArrowLeft, AlertCircle, Upload, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlacementCanvas } from "./placement-canvas";
 import type { SpriteItem, PlacementTransform } from "@/types/hair-studio";
@@ -110,6 +110,16 @@ export function SceneComposer({
   const [selectedAspect, setSelectedAspect] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Sprite ids already composed onto the CURRENT background, so the user can
+  // see progress while placing multiple sprites (e.g. front + back) one at a
+  // time onto the same background. Reset whenever the background changes,
+  // since "composed" is only meaningful relative to a specific background.
+  const [composedSpriteIds, setComposedSpriteIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    setComposedSpriteIds(new Set());
+  }, [backgroundDataUrl]);
 
   const selectedSprite =
     fulfilledSprites.find((s) => s.id === selectedSpriteId) ?? fulfilledSprites[0];
@@ -260,6 +270,7 @@ export function SceneComposer({
 
           {fulfilledSprites.length > 0 ? (
             <div className="space-y-2">
+              <p className="text-xs text-muted-foreground">{t("composeHint")}</p>
               <div className="flex flex-wrap gap-3">
                 {fulfilledSprites.map((sprite) => (
                   <button
@@ -281,6 +292,14 @@ export function SceneComposer({
                         className="w-full h-full object-contain"
                       />
                     )}
+                    {composedSpriteIds.has(sprite.id) && (
+                      <span
+                        className="absolute top-0.5 right-0.5 flex items-center justify-center w-4 h-4 rounded-full bg-primary text-primary-foreground"
+                        title={t("composedBadge")}
+                      >
+                        <Check className="w-3 h-3" />
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -296,7 +315,10 @@ export function SceneComposer({
           key={`${selectedSprite.id}-${backgroundDataUrl.length}`}
           backgroundDataUrl={backgroundDataUrl}
           spriteDataUrl={selectedSprite.imageDataUrl}
-          onConfirm={(draft, tf) => onCompose(selectedSprite.id, draft, tf)}
+          onConfirm={(draft, tf) => {
+            onCompose(selectedSprite.id, draft, tf);
+            setComposedSpriteIds((prev) => new Set(prev).add(selectedSprite.id));
+          }}
         />
       ) : null}
     </div>

@@ -26,12 +26,17 @@ export function PlacementCanvas({ backgroundDataUrl, spriteDataUrl, onConfirm }:
   }, [tf.x, tf.y]);
 
   const onPointerMove = useCallback((e: React.PointerEvent) => {
-    if (!drag.current || !containerRef.current) return;
+    const d = drag.current;
+    if (!d || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const dx = (e.clientX - drag.current.startX) / rect.width;
-    const dy = (e.clientY - drag.current.startY) / rect.height;
+    const dx = (e.clientX - d.startX) / rect.width;
+    const dy = (e.clientY - d.startY) / rect.height;
     const clamp = (v: number) => Math.max(-0.9, Math.min(0.9, v));
-    setTf((p) => ({ ...p, x: clamp(drag.current!.origX + dx), y: clamp(drag.current!.origY + dy) }));
+    // Snapshot origX/origY into locals above — never deref `drag.current`
+    // inside this updater. React may invoke the updater asynchronously,
+    // after pointerup/pointercancel has already reset drag.current to null,
+    // which previously crashed with "Cannot read properties of null".
+    setTf((p) => ({ ...p, x: clamp(d.origX + dx), y: clamp(d.origY + dy) }));
   }, []);
 
   const onPointerUp = useCallback(() => { drag.current = null; }, []);
@@ -65,24 +70,36 @@ export function PlacementCanvas({ backgroundDataUrl, spriteDataUrl, onConfirm }:
 
   return (
     <div className="space-y-3">
-      <div
-        ref={containerRef}
-        className="relative w-full overflow-hidden rounded-lg border select-none bg-muted"
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={backgroundDataUrl} alt="background" className="w-full block" draggable={false} />
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={spriteDataUrl}
-          alt="sprite"
-          draggable={false}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          className="absolute cursor-move touch-none"
-          style={{ left: `${tf.x * 100}%`, top: `${tf.y * 100}%`, width: `${tf.scale * 100}%` }}
-        />
+      <div className="flex justify-center">
+        <div
+          ref={containerRef}
+          // inline-block + the flex/justify-center wrapper above so the
+          // container hugs the rendered size of the background image
+          // exactly. If the container were always full-width, a tall/large
+          // photo capped by max-h below would leave empty space inside the
+          // container that the sprite's x/y percentages don't account for.
+          className="relative inline-block max-w-full overflow-hidden rounded-lg border select-none bg-muted"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={backgroundDataUrl}
+            alt="background"
+            className="block w-auto h-auto max-w-full max-h-[60vh] object-contain"
+            draggable={false}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={spriteDataUrl}
+            alt="sprite"
+            draggable={false}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            className="absolute cursor-move touch-none"
+            style={{ left: `${tf.x * 100}%`, top: `${tf.y * 100}%`, width: `${tf.scale * 100}%` }}
+          />
+        </div>
       </div>
       <div className="flex items-center gap-3">
         <span className="text-xs text-muted-foreground whitespace-nowrap">{t("placement.size")}</span>

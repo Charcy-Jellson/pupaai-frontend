@@ -1024,6 +1024,8 @@
     "aspect": "宽高比",
     "resolution": "分辨率",
     "noSprites": "暂无姿势精灵图，请先在上一步生成。",
+    "composeHint": "选择一个精灵图，在背景上调整位置后确认——再选择下一个精灵图重复此操作，即可合成多张结果图。",
+    "composedBadge": "已在此背景上合成过",
     "placement": {
       "size": "大小",
       "confirm": "确认放置"
