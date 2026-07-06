@@ -464,7 +464,9 @@ export async function uploadCharacterAsset(
 
 export async function createCharacter(
   userId: string,
-  data: Omit<CharacterRecord, "id" | "user_id" | "created_at" | "updated_at">
+  // `id` is supplied by the caller so storage assets can be uploaded under
+  // users/{userId}/characters/{id}/ before the row exists.
+  data: Omit<CharacterRecord, "user_id" | "created_at" | "updated_at">
 ): Promise<CharacterRecord | null> {
   const { data: row, error } = await supabase
     .from("characters")

@@ -72,18 +72,26 @@ export function useHairStudio(userId?: string, getToken?: () => Promise<string |
 
   const saveCharacter = useCallback(async (): Promise<boolean> => {
     if (!userId || !state.generatedCardDataUrl) return false;
-    const tempId = crypto.randomUUID();
-    const cardPath = await uploadCharacterAsset(userId, tempId, "card", state.generatedCardDataUrl);
+    // Generate the row id up front so all assets live under
+    // users/{userId}/characters/{characterId}/ (matches migration 0005).
+    const characterId = crypto.randomUUID();
+    const b = state.cardBuilder;
+    const [cardPath, faceRefPath, hairRefPath, outfitRefPath] = await Promise.all([
+      uploadCharacterAsset(userId, characterId, "card", state.generatedCardDataUrl),
+      b.faceImage ? uploadCharacterAsset(userId, characterId, "face_ref", b.faceImage) : null,
+      b.hairImage ? uploadCharacterAsset(userId, characterId, "hair_ref", b.hairImage) : null,
+      b.outfitImage ? uploadCharacterAsset(userId, characterId, "outfit_ref", b.outfitImage) : null,
+    ]);
     if (!cardPath) {
       setState((p) => ({ ...p, error: "Failed to upload card" }));
       return false;
     }
-    const b = state.cardBuilder;
     const row = await createCharacter(userId, {
+      id: characterId,
       name: b.name || `Character ${new Date().toLocaleDateString()}`,
       card_storage_path: cardPath,
       face_desc: b.faceDesc || null, hair_desc: b.hairDesc || null, outfit_desc: b.outfitDesc || null,
-      face_ref_path: null, hair_ref_path: null, outfit_ref_path: null, seed: 42,
+      face_ref_path: faceRefPath, hair_ref_path: hairRefPath, outfit_ref_path: outfitRefPath, seed: 42,
     });
     if (!row) {
       setState((p) => ({ ...p, error: "Failed to save character" }));
