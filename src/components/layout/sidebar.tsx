@@ -24,6 +24,7 @@ import {
   User,
   Wand2,
   Gem,
+  Scissors,
 } from "lucide-react";
 
 interface NavItem {
@@ -63,13 +64,18 @@ const navigationGroups: NavGroup[] = [
         href: "/dashboard/logo-studio", 
         icon: Wand2,
       },
-      { 
-        nameKey: "sidebar.nailStudio", 
-        href: "/dashboard/nail-studio", 
+      {
+        nameKey: "sidebar.nailStudio",
+        href: "/dashboard/nail-studio",
         icon: Gem,
       },
-      { 
-        nameKey: "sidebar.videoTools", 
+      {
+        nameKey: "sidebar.hairStudio",
+        href: "/dashboard/hair-studio",
+        icon: Scissors,
+      },
+      {
+        nameKey: "sidebar.videoTools",
         href: "/dashboard/video-tools", 
         icon: Video,
       },
