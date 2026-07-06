@@ -641,6 +641,24 @@ export interface GenerateCardRequest {
   outfit_desc?: string;
 }
 
+export interface GeneratePoseSpriteRequest {
+  card_image_base64: string;
+  card_desc: string;
+  angle: SpriteAngle;
+  composition: SpriteComposition;
+  pose: SpritePose;
+  action?: string;
+}
+
+export interface FuseSceneRequest {
+  draft_image_base64: string;
+  draft_mime_type?: string;
+  image_size?: FuseImageSize;
+}
+
+/**
+ * Generate a character model-sheet card from optional face/hair/outfit reference images or text descriptions
+ */
 export async function generateCharacterCard(
   request: GenerateCardRequest,
   modelId?: string,
@@ -651,18 +669,15 @@ export async function generateCharacterCard(
     headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
+
   return handleResponse<ProcessedImageResponse>(response);
 }
 
+/**
+ * Generate a white-background pose shot of the card's character; returns a transparent PNG cutout
+ */
 export async function generatePoseSprite(
-  request: {
-    card_image_base64: string;
-    card_desc: string;
-    angle: SpriteAngle;
-    composition: SpriteComposition;
-    pose: SpritePose;
-    action?: string;
-  },
+  request: GeneratePoseSpriteRequest,
   modelId?: string,
   authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
@@ -671,11 +686,15 @@ export async function generatePoseSprite(
     headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
+
   return handleResponse<ProcessedImageResponse>(response);
 }
 
+/**
+ * Fuse a user-arranged composite draft (background + sprite) into a natural photorealistic image
+ */
 export async function fuseScene(
-  request: { draft_image_base64: string; draft_mime_type?: string; image_size?: FuseImageSize },
+  request: FuseSceneRequest,
   modelId?: string,
   authToken?: string
 ): Promise<ApiResponse<ProcessedImageResponse>> {
@@ -684,5 +703,6 @@ export async function fuseScene(
     headers: buildAuthHeaders(authToken),
     body: JSON.stringify(request),
   });
+
   return handleResponse<ProcessedImageResponse>(response);
 }
