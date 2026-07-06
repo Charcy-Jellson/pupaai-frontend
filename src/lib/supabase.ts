@@ -502,7 +502,9 @@ export async function renameCharacter(characterId: string, newName: string): Pro
 
 export async function deleteCharacter(characterId: string, cardStoragePath: string): Promise<boolean> {
   // Best-effort storage cleanup (folder prefix), then the row (RLS scopes to owner)
-  const prefix = cardStoragePath.replace(/\/card\.png$/, "");
+  const prefix = cardStoragePath.includes("/")
+    ? cardStoragePath.slice(0, cardStoragePath.lastIndexOf("/"))
+    : cardStoragePath;
   const { data: assets } = await supabase.storage.from(STORAGE_BUCKET).list(prefix);
   if (assets && assets.length > 0) {
     await supabase.storage.from(STORAGE_BUCKET).remove(assets.map((a) => `${prefix}/${a.name}`));
