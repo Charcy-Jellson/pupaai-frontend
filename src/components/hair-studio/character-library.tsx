@@ -51,6 +51,10 @@ export function CharacterLibrary({
                 <Input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { onRename(c.id, draft.trim() || c.name); setEditing(null); }
+                    if (e.key === "Escape") setEditing(null);
+                  }}
                   className="h-7 text-xs"
                   autoFocus
                 />
