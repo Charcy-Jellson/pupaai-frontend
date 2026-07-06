@@ -30,7 +30,8 @@ export function PlacementCanvas({ backgroundDataUrl, spriteDataUrl, onConfirm }:
     const rect = containerRef.current.getBoundingClientRect();
     const dx = (e.clientX - drag.current.startX) / rect.width;
     const dy = (e.clientY - drag.current.startY) / rect.height;
-    setTf((p) => ({ ...p, x: drag.current!.origX + dx, y: drag.current!.origY + dy }));
+    const clamp = (v: number) => Math.max(-0.9, Math.min(0.9, v));
+    setTf((p) => ({ ...p, x: clamp(drag.current!.origX + dx), y: clamp(drag.current!.origY + dy) }));
   }, []);
 
   const onPointerUp = useCallback(() => { drag.current = null; }, []);
@@ -78,6 +79,7 @@ export function PlacementCanvas({ backgroundDataUrl, spriteDataUrl, onConfirm }:
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
           className="absolute cursor-move touch-none"
           style={{ left: `${tf.x * 100}%`, top: `${tf.y * 100}%`, width: `${tf.scale * 100}%` }}
         />
