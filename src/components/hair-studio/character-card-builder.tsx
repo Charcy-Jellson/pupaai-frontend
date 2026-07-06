@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Upload, Sparkles, ArrowLeft, Save, Loader2, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Upload, Sparkles, ArrowLeft, Save, Loader2, X, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { CardBuilderState } from "@/types/hair-studio";
 
 interface CharacterCardBuilderProps {
@@ -23,6 +26,11 @@ type DimensionKey = "face" | "hair" | "outfit";
 
 const DIMENSIONS = [{ key: "face" }, { key: "hair" }, { key: "outfit" }] as const satisfies readonly { key: DimensionKey }[];
 
+// Browsers (Chrome in particular) cannot decode HEIC/HEIF, which is the
+// default photo format on iPhone/macOS. Accept only formats every major
+// browser can actually decode, matching the app's other image uploaders.
+const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const readFile = (f: File): Promise<string> =>
   new Promise((res, rej) => {
     const r = new FileReader();
@@ -30,6 +38,16 @@ const readFile = (f: File): Promise<string> =>
     r.onerror = () => rej(r.error);
     r.readAsDataURL(f);
   });
+
+// Verify the browser can actually decode the image data (not just that the
+// file extension/MIME type looked right). Unsupported formats throw a
+// DOMException here ("The source image cannot be decoded.") — callers
+// should catch this and surface a translated, actionable message instead.
+const assertDecodable = (dataUrl: string): Promise<void> => {
+  const img = new Image();
+  img.src = dataUrl;
+  return img.decode();
+};
 
 export function CharacterCardBuilder({
   builder,
@@ -41,6 +59,29 @@ export function CharacterCardBuilder({
   onBack,
 }: CharacterCardBuilderProps) {
   const t = useTranslations("hairStudio");
+  const [imageErrors, setImageErrors] = useState<Partial<Record<DimensionKey, string>>>({});
+  const [draggingKey, setDraggingKey] = useState<DimensionKey | null>(null);
+
+  // Shared handler for both the click-to-upload input and drag-and-drop.
+  // Dropped files bypass the <input accept> filter, so the MIME type is
+  // validated here, and the image is decode-checked so unsupported formats
+  // surface a clear, translated error instead of a raw DOMException.
+  const processFile = async (key: DimensionKey, file: File) => {
+    setImageErrors((prev) => ({ ...prev, [key]: undefined }));
+    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
+      setImageErrors((prev) => ({ ...prev, [key]: t("invalidImage") }));
+      return;
+    }
+    const dataUrl = await readFile(file);
+    try {
+      await assertDecodable(dataUrl);
+    } catch {
+      setImageErrors((prev) => ({ ...prev, [key]: t("invalidImage") }));
+      return;
+    }
+    const imgField = `${key}Image` as keyof CardBuilderState;
+    onChange({ [imgField]: dataUrl } as Partial<CardBuilderState>);
+  };
 
   const handleFileChange = async (
     key: DimensionKey,
@@ -49,9 +90,28 @@ export function CharacterCardBuilder({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const dataUrl = await readFile(file);
-    const imgField = `${key}Image` as keyof CardBuilderState;
-    onChange({ [imgField]: dataUrl } as Partial<CardBuilderState>);
+    await processFile(key, file);
+  };
+
+  const handleDragOver = (key: DimensionKey) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingKey(key);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingKey(null);
+  };
+
+  const handleDrop = (key: DimensionKey) => async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingKey(null);
+    const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
+    if (!file) return;
+    await processFile(key, file);
   };
 
   const clearImage = (key: DimensionKey) => {
@@ -99,15 +159,46 @@ export function CharacterCardBuilder({
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer bg-muted/20 hover:bg-muted/40 transition-colors">
-                    <Upload className="w-5 h-5 text-muted-foreground" />
+                  <label
+                    className={cn(
+                      "flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed rounded-lg cursor-pointer transition-colors text-center px-1",
+                      draggingKey === key
+                        ? "border-primary bg-primary/10"
+                        : "bg-muted/20 hover:bg-muted/40"
+                    )}
+                    onDragOver={handleDragOver(key)}
+                    onDragEnter={handleDragOver(key)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop(key)}
+                  >
+                    <Upload
+                      className={cn(
+                        "w-5 h-5",
+                        draggingKey === key ? "text-primary" : "text-muted-foreground"
+                      )}
+                    />
+                    <span
+                      className={cn(
+                        "text-[10px] mt-1 leading-tight",
+                        draggingKey === key ? "text-primary" : "text-muted-foreground"
+                      )}
+                    >
+                      {draggingKey === key ? t("dropHere") : t("clickOrDragImage")}
+                    </span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       onChange={(e) => handleFileChange(key, e)}
                     />
                   </label>
+                )}
+
+                {imageErrors[key] && (
+                  <Alert variant="destructive" className="py-2">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    <AlertDescription className="text-xs">{imageErrors[key]}</AlertDescription>
+                  </Alert>
                 )}
 
                 <Textarea

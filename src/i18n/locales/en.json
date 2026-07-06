@@ -1033,7 +1033,10 @@
     "saved": "Saved",
     "savedDesc": "Image saved to your gallery",
     "saveFailed": "Save Failed",
-    "saveFailedDesc": "Failed to save the image to gallery"
+    "saveFailedDesc": "Failed to save the image to gallery",
+    "invalidImage": "Unsupported image format — please use JPG/PNG/WebP",
+    "dropHere": "Drop image here",
+    "clickOrDragImage": "Click or drag image here"
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. All rights reserved."

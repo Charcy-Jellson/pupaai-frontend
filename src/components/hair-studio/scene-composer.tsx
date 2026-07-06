@@ -1,11 +1,12 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Upload } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, AlertCircle, Upload } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlacementCanvas } from "./placement-canvas";
 import type { SpriteItem, PlacementTransform } from "@/types/hair-studio";
@@ -24,6 +25,11 @@ interface SceneComposerProps {
 const ASPECT_RATIOS = ["1:1", "3:4", "4:3", "9:16", "16:9"] as const;
 const IMAGE_SIZES: FuseImageSize[] = ["1K", "2K", "4K"];
 
+// Browsers (Chrome in particular) cannot decode HEIC/HEIF, which is the
+// default photo format on iPhone/macOS. Accept only formats every major
+// browser can actually decode, matching the app's other image uploaders.
+const ACCEPTED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
 const readFile = (f: File): Promise<string> =>
   new Promise((res, rej) => {
     const r = new FileReader();
@@ -36,6 +42,17 @@ const readFile = (f: File): Promise<string> =>
 // blow past Gemini's ~20MB inline limit / the backend's 25MB body cap when a
 // user uploads a high-resolution (e.g. 12MP phone) photo. Never scales up.
 const MAX_OUTPUT_DIMENSION = 2048;
+
+// Verify the browser can actually decode the image data (not just that the
+// file extension/MIME type looked right). HEIC/HEIF files, or any other
+// format the browser can't decode, throw a DOMException here ("The source
+// image cannot be decoded.") — callers should catch this and surface a
+// translated, actionable message instead of the raw browser error.
+async function assertDecodable(dataUrl: string): Promise<void> {
+  const img = new Image();
+  img.src = dataUrl;
+  await img.decode();
+}
 
 async function cropToAspect(dataUrl: string, ratioW: number, ratioH: number): Promise<string> {
   const img = new Image();
@@ -81,7 +98,6 @@ export function SceneComposer({
   onBack,
 }: SceneComposerProps) {
   const t = useTranslations("hairStudio");
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fulfilledSprites = sprites.filter(
     (s) => s.status === "fulfilled" && s.imageDataUrl
@@ -92,48 +108,112 @@ export function SceneComposer({
   );
   const [originalBg, setOriginalBg] = useState<string | null>(null);
   const [selectedAspect, setSelectedAspect] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const selectedSprite =
     fulfilledSprites.find((s) => s.id === selectedSpriteId) ?? fulfilledSprites[0];
+
+  // Shared handler for both the click-to-upload input and drag-and-drop.
+  // Dropped files bypass the <input accept> filter, so the MIME type is
+  // validated here, and the image is decode-checked so unsupported formats
+  // (e.g. HEIC photos from iPhone/macOS, which Chrome cannot decode) surface
+  // a clear, translated error instead of a raw DOMException.
+  const processFile = async (file: File) => {
+    setUploadError(null);
+    if (!ACCEPTED_MIME_TYPES.includes(file.type)) {
+      setUploadError(t("invalidImage"));
+      return;
+    }
+    const dataUrl = await readFile(file);
+    try {
+      await assertDecodable(dataUrl);
+    } catch {
+      setUploadError(t("invalidImage"));
+      return;
+    }
+    setOriginalBg(dataUrl);
+    setSelectedAspect(null);
+    onSetBackground(dataUrl);
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const dataUrl = await readFile(file);
-    setOriginalBg(dataUrl);
-    setSelectedAspect(null);
-    onSetBackground(dataUrl);
+    await processFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const file = Array.from(e.dataTransfer.files).find((f) => f.type.startsWith("image/"));
+    if (!file) return;
+    await processFile(file);
   };
 
   const handleAspectClick = async (ratio: (typeof ASPECT_RATIOS)[number]) => {
     const source = originalBg ?? backgroundDataUrl;
     if (!source) return;
     const [w, h] = ratio.split(":").map(Number);
-    const cropped = await cropToAspect(source, w, h);
-    setSelectedAspect(ratio);
-    onSetBackground(cropped);
+    try {
+      const cropped = await cropToAspect(source, w, h);
+      setSelectedAspect(ratio);
+      onSetBackground(cropped);
+    } catch {
+      setUploadError(t("invalidImage"));
+    }
   };
 
   return (
     <div className="space-y-6">
+      {uploadError && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{uploadError}</AlertDescription>
+        </Alert>
+      )}
+
       <div className="flex items-center justify-between gap-2">
         <Button variant="outline" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-2" />
           {t("back")}
         </Button>
 
-        <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
-          <Upload className="w-4 h-4 mr-2" />
-          {t("uploadBackground")}
-        </Button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="hidden"
-          onChange={handleFileChange}
-        />
+        <label
+          className={cn(
+            "inline-flex items-center gap-2 px-4 py-2 rounded-md border text-sm font-medium cursor-pointer transition-colors",
+            isDragging
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-input bg-background hover:bg-muted/50"
+          )}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          <Upload className="w-4 h-4" />
+          {isDragging ? t("dropHere") : t("uploadBackground")}
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </label>
       </div>
 
       <Card className="bg-card/50 backdrop-blur border-border/50">

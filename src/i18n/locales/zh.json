@@ -1033,7 +1033,10 @@
     "saved": "已保存",
     "savedDesc": "图片已保存到图库",
     "saveFailed": "保存失败",
-    "saveFailedDesc": "保存图片到图库失败"
+    "saveFailedDesc": "保存图片到图库失败",
+    "invalidImage": "图片格式不支持，请使用 JPG/PNG/WebP 格式",
+    "dropHere": "将图片拖放到此处",
+    "clickOrDragImage": "点击或拖拽图片到此处"
   },
   "footer": {
     "copyright": "© {year} Pupa AI Studio. 保留所有权利。"
